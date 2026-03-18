@@ -1,4 +1,6 @@
 #include "raylib.h"
+#include <vector>
+using namespace std;    
 
 int main(){
     int screenWidth = 800;
@@ -22,7 +24,10 @@ int main(){
         float roomY = (screenHeight - roomHeight) / 2.0f;
 
     //definiowanie przeszkody
-    Rectangle rock = {roomX + 200, roomY + 150, 100 , 100};
+    vector<Rectangle> obstacles = {
+             {roomX + 200, roomY + 150, 100 , 100},
+             {roomX + 700, roomY + 300, 100 , 100},
+    };
 
     while(!WindowShouldClose()){
 
@@ -31,16 +36,19 @@ int main(){
         //poruszanie się gracza wsad
         if(IsKeyDown(KEY_W)) playerPos.y -= playerSpeed * GetFrameTime(); 
         if(IsKeyDown(KEY_S)) playerPos.y += playerSpeed * GetFrameTime(); 
-
-        if(CheckCollisionCircleRec(playerPos, playerSize, rock)){
-            playerPos.y = oldPos.y; //przywrócenie poprzedniej pozycji gracza
+        for(Rectangle rocks : obstacles){
+            if(CheckCollisionCircleRec(playerPos, playerSize, rocks)){
+                playerPos.y = oldPos.y; //przywrócenie poprzedniej pozycji gracza
+            }
         }
 
         if(IsKeyDown(KEY_A)) playerPos.x -= playerSpeed * GetFrameTime(); 
         if(IsKeyDown(KEY_D)) playerPos.x += playerSpeed * GetFrameTime(); 
 
-        if(CheckCollisionCircleRec(playerPos, playerSize, rock)){
-            playerPos.x = oldPos.x; 
+        for(Rectangle rocks : obstacles){
+            if(CheckCollisionCircleRec(playerPos, playerSize, rocks)){
+                playerPos.x = oldPos.x; 
+            }
         }
 
         //ograniczenie ruchu gracza do obszaru pokoju
@@ -54,8 +62,10 @@ int main(){
         Rectangle roomRect = {roomX, roomY, roomWidth, roomHeight}; //definiowanie prostokąta pokoju
         DrawRectangleLinesEx(roomRect, 5, DARKGREEN); //rysowanie obramowania pokoju
         DrawCircleV(playerPos, playerSize, BLUE); //rysowanie gracza
-        DrawRectangleRec(rock, BLACK);
-        DrawRectangleLinesEx(rock, 5, DARKGRAY);
+        for(Rectangle rocks : obstacles){
+            DrawRectangleRec(rocks, BLACK);
+            DrawRectangleLinesEx(rocks, 5, DARKGRAY);
+        }
         ClearBackground(GRAY);
         EndDrawing();
     }
