@@ -21,13 +21,27 @@ int main(){
         float roomX = (screenWidth - roomWidth) / 2.0f;
         float roomY = (screenHeight - roomHeight) / 2.0f;
 
+    //definiowanie przeszkody
+    Rectangle rock = {roomX + 200, roomY + 150, 100 , 100};
+
     while(!WindowShouldClose()){
+
+        Vector2 oldPos = playerPos;
 
         //poruszanie się gracza wsad
         if(IsKeyDown(KEY_W)) playerPos.y -= playerSpeed * GetFrameTime(); 
         if(IsKeyDown(KEY_S)) playerPos.y += playerSpeed * GetFrameTime(); 
+
+        if(CheckCollisionCircleRec(playerPos, playerSize, rock)){
+            playerPos.y = oldPos.y; //przywrócenie poprzedniej pozycji gracza
+        }
+
         if(IsKeyDown(KEY_A)) playerPos.x -= playerSpeed * GetFrameTime(); 
         if(IsKeyDown(KEY_D)) playerPos.x += playerSpeed * GetFrameTime(); 
+
+        if(CheckCollisionCircleRec(playerPos, playerSize, rock)){
+            playerPos.x = oldPos.x; 
+        }
 
         //ograniczenie ruchu gracza do obszaru pokoju
         if (playerPos.x - playerSize <= roomX) playerPos.x = roomX + playerSize + 5;
@@ -40,6 +54,8 @@ int main(){
         Rectangle roomRect = {roomX, roomY, roomWidth, roomHeight}; //definiowanie prostokąta pokoju
         DrawRectangleLinesEx(roomRect, 5, DARKGREEN); //rysowanie obramowania pokoju
         DrawCircleV(playerPos, playerSize, BLUE); //rysowanie gracza
+        DrawRectangleRec(rock, BLACK);
+        DrawRectangleLinesEx(rock, 5, DARKGRAY);
         ClearBackground(GRAY);
         EndDrawing();
     }
