@@ -1,0 +1,1 @@
+g++ main.cpp -lraylib -o raylib_example -lGL -lm -lpthread -ldl -lrt -lX11

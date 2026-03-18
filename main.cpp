@@ -1,7 +1,9 @@
 #include "raylib.h"
 
 int main(){
-    InitWindow(800, 600, "Lochy");
+    const int screenWidth = 800;
+    const int screenHeight = 600;
+    InitWindow(screenWidth, screenHeight, "Lochy");
     SetTargetFPS(30);
 
     //gracz
@@ -11,11 +13,17 @@ int main(){
 
     while(!WindowShouldClose()){
 
+        //poruszanie się gracza wsad
+        if(IsKeyDown(KEY_W)) playerPos.y -= playerSpeed * GetFrameTime(); 
+        if(IsKeyDown(KEY_S)) playerPos.y += playerSpeed * GetFrameTime(); 
+        if(IsKeyDown(KEY_A)) playerPos.x -= playerSpeed * GetFrameTime(); 
+        if(IsKeyDown(KEY_D)) playerPos.x += playerSpeed * GetFrameTime(); 
 
-        if(IsKeyDown(KEY_W)) playerPos.y -= playerSpeed * GetFrameTime(); //ruch w górę
-        if(IsKeyDown(KEY_S)) playerPos.y += playerSpeed * GetFrameTime(); // w dol
-        if(IsKeyDown(KEY_A)) playerPos.x -= playerSpeed * GetFrameTime(); // w lewo
-        if(IsKeyDown(KEY_D)) playerPos.x += playerSpeed * GetFrameTime(); // w prawo
+        //ograniczenie ruchu gracza do obszaru ekranu
+        if(playerPos.x < playerSize) playerPos.x = playerSize;
+        if(playerPos.x > screenWidth - playerSize) playerPos.x = screenWidth - playerSize; 
+        if(playerPos.y < playerSize) playerPos.y = playerSize; 
+        if(playerPos.y > screenHeight - playerSize) playerPos.y = screenHeight - playerSize; 
 
         BeginDrawing();
 
