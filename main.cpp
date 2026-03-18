@@ -18,6 +18,7 @@ int main(){
     Vector2 playerPos = {400, 300}; //pozycja gracza
     float playerSpeed = 200.0f; //szybkość gracza
     float playerSize = 20.0f; //rozmiar gracza
+
     screenWidth = GetMonitorWidth(GetCurrentMonitor());
     screenHeight = GetMonitorHeight(GetCurrentMonitor());    
     ToggleFullscreen();
@@ -32,7 +33,7 @@ int main(){
     //definiowanie przeszkody
     vector<Rectangle> obstacles = {
              {roomX + 200, roomY + 150, 100 , 100},
-             {roomX + 700, roomY + 300, 100 , 100},
+             {roomX + 700, roomY + 300, 100 , 100}, 
     };
 
     vector<bullet> bullets;
@@ -79,10 +80,20 @@ int main(){
             bullets[i].position.x += bullets[i].direction.x * GetFrameTime() * bullets[i].speed;
             bullets[i].position.y += bullets[i].direction.y * GetFrameTime() * bullets[i].speed;
             bool hitSomething = false;
-        
+            
+            //kolizja pocisku z scianami pokoju   
             if(bullets[i].position.x < roomX || bullets[i].position.x > roomX + roomWidth ||
                bullets[i].position.y < roomY || bullets[i].position.y > roomY + roomHeight){
                 hitSomething = true;
+            }
+            //kolizzja pociksu z przeszkodami
+            if(!hitSomething){
+                for(Rectangle rocks : obstacles){
+                    if(CheckCollisionCircleRec(bullets[i].position, bulletSize, rocks)){
+                        hitSomething = true;
+                        break;
+                    }
+                    }
             }
 
             if(hitSomething){
