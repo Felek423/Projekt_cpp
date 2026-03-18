@@ -2,6 +2,12 @@
 #include <vector>
 using namespace std;    
 
+struct bullet{
+    Vector2 position;
+    Vector2 direction;
+    float speed;
+};
+
 int main(){
     int screenWidth = 800;
     int screenHeight = 600;
@@ -28,6 +34,11 @@ int main(){
              {roomX + 200, roomY + 150, 100 , 100},
              {roomX + 700, roomY + 300, 100 , 100},
     };
+
+    vector<bullet> bullets;
+    float bulletSpeed = 200.0f;
+    float bulletSize = 10.0f;
+
 
     while(!WindowShouldClose()){
 
@@ -57,7 +68,19 @@ int main(){
         if (playerPos.y - playerSize <= roomY) playerPos.y = roomY + playerSize + 5;
         if (playerPos.y + playerSize >= roomY + roomHeight) playerPos.y = roomY + roomHeight - playerSize - 5;
 
-        BeginDrawing();
+        //strzelanie
+        if(IsKeyPressed(KEY_UP)) bullets.push_back({playerPos, {0, - bulletSpeed} , 5});
+        if(IsKeyPressed(KEY_DOWN)) bullets.push_back({playerPos, {0, bulletSpeed} , 5});
+        if(IsKeyPressed(KEY_LEFT)) bullets.push_back({playerPos, {-bulletSpeed, 0} , 5});
+        if(IsKeyPressed(KEY_RIGHT)) bullets.push_back({playerPos, {bulletSpeed, 0} , 5});
+        
+        for(int i = bullets.size() - 1; i >= 0; i--){
+            bullets[i].position.x += bullets[i].direction.x * GetFrameTime() * bullets[i].speed;
+            bullets[i].position.y += bullets[i].direction.y * GetFrameTime() * bullets[i].speed;
+            bool hitSomething = false;
+        }
+        
+        BeginDrawing(); 
         DrawRectangle(roomX, roomY, roomWidth, roomHeight, GREEN); //rysowanie pokoju
         Rectangle roomRect = {roomX, roomY, roomWidth, roomHeight}; //definiowanie prostokąta pokoju
         DrawRectangleLinesEx(roomRect, 5, DARKGREEN); //rysowanie obramowania pokoju
@@ -66,7 +89,10 @@ int main(){
             DrawRectangleRec(rocks, BLACK);
             DrawRectangleLinesEx(rocks, 5, DARKGRAY);
         }
+        for(bullet b: bullets){
+            DrawCircleV(b.position, bulletSize, RED);
+        }
         ClearBackground(GRAY);
         EndDrawing();
-    }
+    } 
 }
