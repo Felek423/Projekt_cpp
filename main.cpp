@@ -36,7 +36,7 @@ int main(){
     };
 
     vector<bullet> bullets;
-    float bulletSpeed = 200.0f;
+    float bulletSpeed = 100.0f;
     float bulletSize = 10.0f;
 
 
@@ -74,13 +74,24 @@ int main(){
         if(IsKeyPressed(KEY_LEFT)) bullets.push_back({playerPos, {-bulletSpeed, 0} , 5});
         if(IsKeyPressed(KEY_RIGHT)) bullets.push_back({playerPos, {bulletSpeed, 0} , 5});
         
+        //ruch pocisku
         for(int i = bullets.size() - 1; i >= 0; i--){
             bullets[i].position.x += bullets[i].direction.x * GetFrameTime() * bullets[i].speed;
             bullets[i].position.y += bullets[i].direction.y * GetFrameTime() * bullets[i].speed;
             bool hitSomething = false;
-        }
         
+            if(bullets[i].position.x < roomX || bullets[i].position.x > roomX + roomWidth ||
+               bullets[i].position.y < roomY || bullets[i].position.y > roomY + roomHeight){
+                hitSomething = true;
+            }
+
+            if(hitSomething){
+                bullets.erase(bullets.begin() + i);
+            }
+        }
+
         BeginDrawing(); 
+        ClearBackground(GRAY);
         DrawRectangle(roomX, roomY, roomWidth, roomHeight, GREEN); //rysowanie pokoju
         Rectangle roomRect = {roomX, roomY, roomWidth, roomHeight}; //definiowanie prostokąta pokoju
         DrawRectangleLinesEx(roomRect, 5, DARKGREEN); //rysowanie obramowania pokoju
@@ -92,7 +103,6 @@ int main(){
         for(bullet b: bullets){
             DrawCircleV(b.position, bulletSize, RED);
         }
-        ClearBackground(GRAY);
         EndDrawing();
     } 
 }
