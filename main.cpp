@@ -1,11 +1,18 @@
 #include "raylib.h"
 #include <vector>
+#include <cmath>
 using namespace std;    
 
 struct bullet{
     Vector2 position;
     Vector2 direction;
     float speed;
+};
+
+struct enemy{
+    Vector2 position;
+    float speed;
+    float size; 
 };
 
 int main(){
@@ -40,6 +47,11 @@ int main(){
     float bulletSpeed = 100.0f;
     float bulletSize = 10.0f;
 
+    vector<enemy> enemies= {
+        {{roomX + 700, roomY + 200}, 100.0f, 20.0f},
+        {{roomX + 100, roomY + 400}, 100.0f, 20.0f}
+
+    };
 
     while(!WindowShouldClose()){
 
@@ -75,6 +87,21 @@ int main(){
         if(IsKeyPressed(KEY_LEFT)) bullets.push_back({playerPos, {-bulletSpeed, 0} , 5});
         if(IsKeyPressed(KEY_RIGHT)) bullets.push_back({playerPos, {bulletSpeed, 0} , 5});
         
+        //ruch wroga
+        for(int i = 0; i < enemies.size(); i++) {
+            float dx = playerPos.x - enemies[i].position.x;
+            float dy = playerPos.y - enemies[i].position.y;
+            float length = sqrt(dx*dx + dy*dy); 
+            
+            if(length > 0) {
+                dx = dx / length;
+                dy = dy / length;
+            }
+            
+            enemies[i].position.x += dx * enemies[i].speed * GetFrameTime();
+            enemies[i].position.y += dy * enemies[i].speed * GetFrameTime();
+        }
+
         //ruch pocisku
         for(int i = bullets.size() - 1; i >= 0; i--){
             bullets[i].position.x += bullets[i].direction.x * GetFrameTime() * bullets[i].speed;
@@ -95,6 +122,16 @@ int main(){
                     }
                     }
             }
+            //kolizja pocisku z przeciwnikiem
+            if(!hitSomething) {
+                for(int j = enemies.size() - 1; j >= 0; j--) {
+                    if(CheckCollisionCircles(bullets[i].position, bulletSize, enemies[j].position, enemies[j].size)) {
+                        hitSomething = true;
+                        enemies.erase(enemies.begin() + j); 
+                        break;
+                    }
+                }
+            }
 
             if(hitSomething){
                 bullets.erase(bullets.begin() + i);
@@ -107,6 +144,11 @@ int main(){
         Rectangle roomRect = {roomX, roomY, roomWidth, roomHeight}; //definiowanie prostokąta pokoju
         DrawRectangleLinesEx(roomRect, 5, DARKGREEN); //rysowanie obramowania pokoju
         DrawCircleV(playerPos, playerSize, BLUE); //rysowanie gracza
+        //rysowanie wrogow
+        for(enemy e : enemies){
+            DrawCircleV(e.position, e.size, PURPLE);
+        }
+        //rysowanie przeszkod
         for(Rectangle rocks : obstacles){
             DrawRectangleRec(rocks, BLACK);
             DrawRectangleLinesEx(rocks, 5, DARKGRAY);
@@ -116,4 +158,5 @@ int main(){
         }
         EndDrawing();
     } 
-}
+}    
+
