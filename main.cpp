@@ -49,7 +49,12 @@ int main(){
 
     vector<enemy> enemies= {
         {{roomX + 700, roomY + 200}, 100.0f, 20.0f},
-        {{roomX + 100, roomY + 400}, 100.0f, 20.0f}
+        {{roomX + 100, roomY + 400}, 100.0f, 20.0f},
+        {{roomX + 500, roomY + 100}, 100.0f, 20.0f},
+        {{roomX + 300, roomY + 500}, 100.0f, 20.0f},
+        {{roomX + 600, roomY + 300}, 100.0f, 20.0f},    
+        {{roomX + 400, roomY + 200}, 100.0f, 20.0f},
+        {{roomX + 200, roomY + 400}, 100.0f, 20.0f}
 
     };
 
@@ -87,7 +92,7 @@ int main(){
         if(IsKeyPressed(KEY_LEFT)) bullets.push_back({playerPos, {-bulletSpeed, 0} , 5});
         if(IsKeyPressed(KEY_RIGHT)) bullets.push_back({playerPos, {bulletSpeed, 0} , 5});
         
-        //ruch wroga
+        //ruch wrogow (podazanie za graczem + kolizje ze skałami)
         for(int i = 0; i < enemies.size(); i++) {
             float dx = playerPos.x - enemies[i].position.x;
             float dy = playerPos.y - enemies[i].position.y;
@@ -98,8 +103,23 @@ int main(){
                 dy = dy / length;
             }
             
+            float oldEnemyX = enemies[i].position.x; // Zapisujemy starą pozycję X
             enemies[i].position.x += dx * enemies[i].speed * GetFrameTime();
+            
+            for(Rectangle rocks : obstacles){
+                if(CheckCollisionCircleRec(enemies[i].position, enemies[i].size, rocks)){
+                    enemies[i].position.x = oldEnemyX; // Cofamy ruch X, jeśli uderzył
+                }
+            }
+
+            float oldEnemyY = enemies[i].position.y; 
             enemies[i].position.y += dy * enemies[i].speed * GetFrameTime();
+            
+            for(Rectangle rocks : obstacles){
+                if(CheckCollisionCircleRec(enemies[i].position, enemies[i].size, rocks)){
+                    enemies[i].position.y = oldEnemyY; 
+                }
+            }
         }
 
         //ruch pocisku
