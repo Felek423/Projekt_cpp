@@ -7,12 +7,15 @@ struct bullet{
     Vector2 position;
     Vector2 direction;
     float speed;
+    bool isEnemy; //rozroznienie miedzy pociskami gracza i przeciwnikow 
 };
 
 struct enemy{
     Vector2 position;
     float speed;
     float size; 
+    int type;   //rodzaj strzelania 1(na krzyz) 2(na skos) 3(wycelowany w gracza)
+    float shootTimer; 
 };
 
 int main(){
@@ -48,14 +51,9 @@ int main(){
     float bulletSize = 10.0f;
 
     vector<enemy> enemies= {
-        {{roomX + 700, roomY + 200}, 100.0f, 20.0f},
-        {{roomX + 100, roomY + 400}, 100.0f, 20.0f},
-        {{roomX + 500, roomY + 100}, 100.0f, 20.0f},
-        {{roomX + 300, roomY + 500}, 100.0f, 20.0f},
-        {{roomX + 600, roomY + 300}, 100.0f, 20.0f},    
-        {{roomX + 400, roomY + 200}, 100.0f, 20.0f},
-        {{roomX + 200, roomY + 400}, 100.0f, 20.0f}
-
+        {{roomX + 700, roomY + 200}, 100.0f, 20.0f, 1, 2.0f},
+        {{roomX + 100, roomY + 400}, 100.0f, 20.0f, 2, 3.0f},
+        {{roomX + 500, roomY + 100}, 100.0f, 20.0f, 3, 4.0f},
     };
 
     while(!WindowShouldClose()){
@@ -87,10 +85,10 @@ int main(){
         if (playerPos.y + playerSize >= roomY + roomHeight) playerPos.y = roomY + roomHeight - playerSize - 5;
 
         //strzelanie
-        if(IsKeyPressed(KEY_UP)) bullets.push_back({playerPos, {0, - bulletSpeed} , 5});
-        if(IsKeyPressed(KEY_DOWN)) bullets.push_back({playerPos, {0, bulletSpeed} , 5});
-        if(IsKeyPressed(KEY_LEFT)) bullets.push_back({playerPos, {-bulletSpeed, 0} , 5});
-        if(IsKeyPressed(KEY_RIGHT)) bullets.push_back({playerPos, {bulletSpeed, 0} , 5});
+        if(IsKeyPressed(KEY_UP)) bullets.push_back({playerPos, {0, -1} , bulletSpeed, false});
+        if(IsKeyPressed(KEY_DOWN)) bullets.push_back({playerPos, {0, 1} , bulletSpeed, false});
+        if(IsKeyPressed(KEY_LEFT)) bullets.push_back({playerPos, {-1, 0} , bulletSpeed, false});
+        if(IsKeyPressed(KEY_RIGHT)) bullets.push_back({playerPos, {1, 0} , bulletSpeed, false});
         
         //ruch wrogow (podazanie za graczem + kolizje ze skałami)
         for(int i = 0; i < enemies.size(); i++) {
@@ -118,6 +116,28 @@ int main(){
             for(Rectangle rocks : obstacles){
                 if(CheckCollisionCircleRec(enemies[i].position, enemies[i].size, rocks)){
                     enemies[i].position.y = oldEnemyY; 
+                }   
+            }
+            enemies[i].shootTimer -= GetFrameTime();
+            
+            if (enemies[i].shootTimer <= 0.0f){
+                enemies[i].shootTimer = 2.0f;
+                float eSpeed = 200.0f;
+
+                if(enemies[i].type == 1){
+                    bullets.push_back({enemies[i].position, {1, 0}, eSpeed, true});
+                    bullets.push_back({enemies[i].position, {-1, 0}, eSpeed, true});
+                    bullets.push_back({enemies[i].position, {0, 1}, eSpeed, true});
+                    bullets.push_back({enemies[i].position, {0, -1}, eSpeed, true});
+                }
+                else if(enemies[i].type == 2){
+                    bullets.push_back({enemies[i].position, {-0.70f, -0.70f}, eSpeed, true});
+                    bullets.push_back({enemies[i].position, {0.70f, -0.70f}, eSpeed, true});
+                    bullets.push_back({enemies[i].position, {0.70f, 0.70f}, eSpeed, true});
+                    bullets.push_back({enemies[i].position, {-0.70f, 0.70f}, eSpeed, true});
+                }
+                else if(enemies[i].type == 3){
+                    bullets.push_back({enemies[i].position, {dx, dy}, eSpeed, true});
                 }
             }
         }
@@ -142,13 +162,23 @@ int main(){
                     }
                     }
             }
-            //kolizja pocisku z przeciwnikiem
+            // Kolizja w zależności od właściciela pocisku
             if(!hitSomething) {
-                for(int j = enemies.size() - 1; j >= 0; j--) {
-                    if(CheckCollisionCircles(bullets[i].position, bulletSize, enemies[j].position, enemies[j].size)) {
+                if (bullets[i].isEnemy) {
+                    // Jeśli to pocisk przeciwnika, sprawdza kolizję z graczem
+                    if (CheckCollisionCircles(bullets[i].position, bulletSize, playerPos, playerSize)) {
                         hitSomething = true;
-                        enemies.erase(enemies.begin() + j); 
-                        break;
+                        CloseWindow(); 
+                        return 0;
+                    }
+                } else {
+                    // Jeśli to pocisk gracza, sprawdza kolizję z przeciwnikami
+                    for(int j = enemies.size() - 1; j >= 0; j--) {
+                        if(CheckCollisionCircles(bullets[i].position, bulletSize, enemies[j].position, enemies[j].size)) {
+                            hitSomething = true;
+                            enemies.erase(enemies.begin() + j); 
+                            break;
+                        }
                     }
                 }
             }
@@ -166,7 +196,12 @@ int main(){
         DrawCircleV(playerPos, playerSize, BLUE); //rysowanie gracza
         //rysowanie wrogow
         for(enemy e : enemies){
-            DrawCircleV(e.position, e.size, PURPLE);
+            Color enemyColor = PURPLE;
+            if(e.type == 1) enemyColor = RED;
+            else if(e.type == 2) enemyColor = ORANGE;
+            else if(e.type == 3) enemyColor = YELLOW;
+            DrawCircleV(e.position, e.size, enemyColor);
+
         }
         //rysowanie przeszkod
         for(Rectangle rocks : obstacles){
@@ -174,7 +209,12 @@ int main(){
             DrawRectangleLinesEx(rocks, 5, DARKGRAY);
         }
         for(bullet b: bullets){
-            DrawCircleV(b.position, bulletSize, RED);
+            if (b.isEnemy){
+                DrawCircleV(b.position, bulletSize, YELLOW);
+            }
+            else{
+                DrawCircleV(b.position, bulletSize, RED);
+            }
         }
         EndDrawing();
     } 
