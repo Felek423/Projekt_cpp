@@ -16,6 +16,7 @@ struct enemy{
     float size; 
     int type;   //rodzaj strzelania 1(na krzyz) 2(na skos) 3(wycelowany w gracza)
     float shootTimer; 
+    int hp;
 };
 
 int main(){
@@ -28,6 +29,8 @@ int main(){
     Vector2 playerPos = {400, 300}; //pozycja gracza
     float playerSpeed = 200.0f; //szybkość gracza
     float playerSize = 20.0f; //rozmiar gracza
+    int playerHp = 6;
+    float invincibilityTimer = 0.0f;
 
     screenWidth = GetMonitorWidth(GetCurrentMonitor());
     screenHeight = GetMonitorHeight(GetCurrentMonitor());    
@@ -51,12 +54,16 @@ int main(){
     float bulletSize = 10.0f;
 
     vector<enemy> enemies= {
-        {{roomX + 700, roomY + 200}, 100.0f, 20.0f, 1, 2.0f},
-        {{roomX + 100, roomY + 400}, 100.0f, 20.0f, 2, 3.0f},
-        {{roomX + 500, roomY + 100}, 100.0f, 20.0f, 3, 4.0f},
+        {{roomX + 700, roomY + 200}, 100.0f, 20.0f, 1, 2.0f, 5},
+        {{roomX + 100, roomY + 400}, 100.0f, 20.0f, 2, 3.0f, 5},
+        {{roomX + 500, roomY + 100}, 100.0f, 20.0f, 3, 4.0f, 5},
     };
 
     while(!WindowShouldClose()){
+
+        if(invincibilityTimer > 0.0f){
+            invincibilityTimer -= GetFrameTime();
+        }
 
         Vector2 oldPos = playerPos;
 
@@ -165,18 +172,28 @@ int main(){
             // Kolizja w zależności od właściciela pocisku
             if(!hitSomething) {
                 if (bullets[i].isEnemy) {
+                    if(invincibilityTimer <= 0.0f){
                     // Jeśli to pocisk przeciwnika, sprawdza kolizję z graczem
                     if (CheckCollisionCircles(bullets[i].position, bulletSize, playerPos, playerSize)) {
                         hitSomething = true;
-                        CloseWindow(); 
-                        return 0;
+                        playerHp -= 1;  
+                        invincibilityTimer = 1.0f;
+                        if(playerHp <= 0){
+                            CloseWindow();
+                            return 0;
+                        }
                     }
+                }    
+                    
                 } else {
                     // Jeśli to pocisk gracza, sprawdza kolizję z przeciwnikami
                     for(int j = enemies.size() - 1; j >= 0; j--) {
                         if(CheckCollisionCircles(bullets[i].position, bulletSize, enemies[j].position, enemies[j].size)) {
                             hitSomething = true;
-                            enemies.erase(enemies.begin() + j); 
+                            enemies[j].hp -= 1;
+                            if(enemies[j].hp <+ 0){
+                                enemies.erase(enemies.begin() + j); 
+                            }
                             break;
                         }
                     }
