@@ -32,6 +32,8 @@ int main(){
     float playerSize = 20.0f; //rozmiar gracza
     int playerHp = 6;
     float invincibilityTimer = 0.0f;
+    float playerAttackSpeed = 0.6f;
+    float playerShootTimer = 0.0f;
 
     screenWidth = GetMonitorWidth(GetCurrentMonitor());
     screenHeight = GetMonitorHeight(GetCurrentMonitor());    
@@ -55,9 +57,9 @@ int main(){
     float bulletSize = 10.0f;
 
     vector<enemy> enemies= {
-        {{roomX + 700, roomY + 200}, 100.0f, 20.0f, 1, 2.0f, 5},
-        {{roomX + 100, roomY + 400}, 100.0f, 20.0f, 2, 3.0f, 5},
-        {{roomX + 500, roomY + 100}, 100.0f, 20.0f, 3, 4.0f, 5},
+        {{roomX + 700, roomY + 200}, 50.0f, 20.0f, 1, 2.0f, 5},
+        {{roomX + 100, roomY + 400}, 50.0f, 20.0f, 2, 3.0f, 5},
+        {{roomX + 500, roomY + 100}, 50.0f, 20.0f, 3, 4.0f, 5},
     };
 
     bool isPaused = false;
@@ -72,6 +74,9 @@ int main(){
                 invincibilityTimer -= GetFrameTime();
             }
 
+            if(playerShootTimer > 0.0f){
+                playerShootTimer -= GetFrameTime();
+            }
         Vector2 oldPos = playerPos;
 
         //poruszanie się gracza wsad
@@ -99,10 +104,19 @@ int main(){
         if (playerPos.y + playerSize >= roomY + roomHeight) playerPos.y = roomY + roomHeight - playerSize - 5;
 
         //strzelanie
-        if(IsKeyPressed(KEY_UP)) bullets.push_back({playerPos, {0, -1} , bulletSpeed, false});
-        if(IsKeyPressed(KEY_DOWN)) bullets.push_back({playerPos, {0, 1} , bulletSpeed, false});
-        if(IsKeyPressed(KEY_LEFT)) bullets.push_back({playerPos, {-1, 0} , bulletSpeed, false});
-        if(IsKeyPressed(KEY_RIGHT)) bullets.push_back({playerPos, {1, 0} , bulletSpeed, false});
+        if(playerShootTimer <= 0.0f){
+            bool hasShot = false;
+
+
+        if(IsKeyDown(KEY_UP)) { bullets.push_back({playerPos, {0, -1} , bulletSpeed, false}); hasShot = true; }
+        else if(IsKeyDown(KEY_DOWN)) {bullets.push_back({playerPos, {0, 1} , bulletSpeed, false}); hasShot = true; }
+        else if(IsKeyDown(KEY_LEFT)) {bullets.push_back({playerPos, {-1, 0} , bulletSpeed, false}); hasShot = true; }
+        else if(IsKeyDown(KEY_RIGHT)) {bullets.push_back({playerPos, {1, 0} , bulletSpeed, false}); hasShot = true; }
+
+        if(hasShot){
+            playerShootTimer = playerAttackSpeed;
+        }
+    }
         
         //ruch wrogow (podazanie za graczem + kolizje ze skałami)
         for(int i = 0; i < enemies.size(); i++) {
