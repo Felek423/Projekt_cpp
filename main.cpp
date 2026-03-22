@@ -23,6 +23,7 @@ int main(){
     int screenWidth = 800;
     int screenHeight = 600;
     InitWindow(screenWidth, screenHeight, "Lochy");
+    SetExitKey(0);
     SetTargetFPS(30);
 
     //gracz
@@ -59,11 +60,17 @@ int main(){
         {{roomX + 500, roomY + 100}, 100.0f, 20.0f, 3, 4.0f, 5},
     };
 
+    bool isPaused = false;
+
     while(!WindowShouldClose()){
 
-        if(invincibilityTimer > 0.0f){
-            invincibilityTimer -= GetFrameTime();
+        if(IsKeyPressed(KEY_ESCAPE)){
+            isPaused = !isPaused;
         }
+        if(!isPaused){
+            if(invincibilityTimer > 0.0f){
+                invincibilityTimer -= GetFrameTime();
+            }
 
         Vector2 oldPos = playerPos;
 
@@ -167,7 +174,7 @@ int main(){
                         hitSomething = true;
                         break;
                     }
-                    }
+                }
             }
             // Kolizja w zależności od właściciela pocisku
             if(!hitSomething) {
@@ -202,6 +209,23 @@ int main(){
 
             if(hitSomething){
                 bullets.erase(bullets.begin() + i);
+            }
+        }
+        
+        }
+    else{
+            Rectangle btnResume = { (float)screenWidth/2 - 100, (float)screenHeight/2 - 60, 200, 50 };
+            Rectangle btnQuit = { (float)screenWidth/2 - 100, (float)screenHeight/2 + 10, 200, 50 };
+            Vector2 mousePos = GetMousePosition();
+
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                if (CheckCollisionPointRec(mousePos, btnResume)) {
+                    isPaused = false; 
+                }
+                if (CheckCollisionPointRec(mousePos, btnQuit)) {
+                    CloseWindow(); 
+                    return 0;      
+                }
             }
         }
 
@@ -256,7 +280,31 @@ int main(){
                 DrawRectangleLines(hx, hy, 30, 30, RED); // puste serce
             }
         }
+        if (isPaused) {
+            DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.6f));
+            
+            const char* pauseText = "PAUZA";
+            int textWidth = MeasureText(pauseText, 40);
+            DrawText(pauseText, screenWidth/2 - textWidth/2, screenHeight/2 - 150, 40, WHITE);
+
+            Rectangle btnResume = { (float)screenWidth/2 - 100, (float)screenHeight/2 - 60, 200, 50 };
+            Rectangle btnQuit = { (float)screenWidth/2 - 100, (float)screenHeight/2 + 10, 200, 50 };
+            Vector2 mousePos = GetMousePosition();
+
+            Color resumeColor = CheckCollisionPointRec(mousePos, btnResume) ? LIGHTGRAY : GRAY;
+            Color quitColor = CheckCollisionPointRec(mousePos, btnQuit) ? LIGHTGRAY : GRAY;
+
+            DrawRectangleRec(btnResume, resumeColor);
+            DrawRectangleLinesEx(btnResume, 2, BLACK);
+            DrawText("Kontynuuj", btnResume.x + 50, btnResume.y + 15, 20, BLACK);
+
+            DrawRectangleRec(btnQuit, quitColor);
+            DrawRectangleLinesEx(btnQuit, 2, BLACK);
+            DrawText("Wyjscie", btnQuit.x + 60, btnQuit.y + 15, 20, BLACK);
+        }
         EndDrawing();
     } 
-}    
+    return 0;
+}
+
 
