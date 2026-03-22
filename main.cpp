@@ -210,7 +210,13 @@ int main(){
         DrawRectangle(roomX, roomY, roomWidth, roomHeight, GREEN); //rysowanie pokoju
         Rectangle roomRect = {roomX, roomY, roomWidth, roomHeight}; //definiowanie prostokąta pokoju
         DrawRectangleLinesEx(roomRect, 5, DARKGREEN); //rysowanie obramowania pokoju
-        DrawCircleV(playerPos, playerSize, BLUE); //rysowanie gracza
+        Color playerColor = BLUE;
+        if(invincibilityTimer > 0.0f){
+            if((int)(invincibilityTimer * 10) % 2 == 0){
+                playerColor = RED;
+            }  
+        }
+        DrawCircleV(playerPos, playerSize, playerColor); //rysowanie gracza
         //rysowanie wrogow
         for(enemy e : enemies){
             Color enemyColor = PURPLE;
@@ -225,12 +231,29 @@ int main(){
             DrawRectangleRec(rocks, BLACK);
             DrawRectangleLinesEx(rocks, 5, DARKGRAY);
         }
+        //rysowanie pociskow
         for(bullet b: bullets){
             if (b.isEnemy){
                 DrawCircleV(b.position, bulletSize, YELLOW);
             }
             else{
                 DrawCircleV(b.position, bulletSize, RED);
+            }
+        }
+        //rysowanie hp gracza
+        int maxHearts = 3;
+        for (int i = 0; i < maxHearts; i++){
+            int hx = 20 + i * 40; // odstep miedzy sercami
+            int hy = 20;
+            if(playerHp >= (i*2) + 2){
+                DrawRectangle(hx, hy, 30, 30, RED); // pelne serce
+            }
+            else if (playerHp >= (i*2) + 1){
+                DrawRectangle(hx, hy, 15, 30, RED); // czesc pelnego serca
+                DrawRectangleLines(hx, hy, 30, 30, RED); // pusta ramka
+            }
+            else {
+                DrawRectangleLines(hx, hy, 30, 30, RED); // puste serce
             }
         }
         EndDrawing();
