@@ -8,6 +8,7 @@ struct bullet{
     Vector2 direction;
     float speed;
     bool isEnemy; //rozroznienie miedzy pociskami gracza i przeciwnikow 
+    float attackRange = 10.0f;
 };
 
 struct enemy{
@@ -53,7 +54,7 @@ int main(){
     };
 
     vector<bullet> bullets;
-    float bulletSpeed = 100.0f;
+    float bulletSpeed = 150.0f;
     float bulletSize = 10.0f;
 
     vector<enemy> enemies= {
@@ -108,10 +109,10 @@ int main(){
             bool hasShot = false;
 
 
-        if(IsKeyDown(KEY_UP)) { bullets.push_back({playerPos, {0, -1} , bulletSpeed, false}); hasShot = true; }
-        else if(IsKeyDown(KEY_DOWN)) {bullets.push_back({playerPos, {0, 1} , bulletSpeed, false}); hasShot = true; }
-        else if(IsKeyDown(KEY_LEFT)) {bullets.push_back({playerPos, {-1, 0} , bulletSpeed, false}); hasShot = true; }
-        else if(IsKeyDown(KEY_RIGHT)) {bullets.push_back({playerPos, {1, 0} , bulletSpeed, false}); hasShot = true; }
+        if(IsKeyDown(KEY_UP)) { bullets.push_back({playerPos, {0, -1} , bulletSpeed, false, 10.0f}); hasShot = true; }
+        else if(IsKeyDown(KEY_DOWN)) {bullets.push_back({playerPos, {0, 1} , bulletSpeed, false, 10.0f }); hasShot = true; }
+        else if(IsKeyDown(KEY_LEFT)) {bullets.push_back({playerPos, {-1, 0} , bulletSpeed, false, 10.0f }); hasShot = true; }
+        else if(IsKeyDown(KEY_RIGHT)) {bullets.push_back({playerPos, {1, 0} , bulletSpeed, false, 10.0f }); hasShot = true; }
 
         if(hasShot){
             playerShootTimer = playerAttackSpeed;
@@ -153,29 +154,37 @@ int main(){
                 float eSpeed = 200.0f;
 
                 if(enemies[i].type == 1){
-                    bullets.push_back({enemies[i].position, {1, 0}, eSpeed, true});
-                    bullets.push_back({enemies[i].position, {-1, 0}, eSpeed, true});
-                    bullets.push_back({enemies[i].position, {0, 1}, eSpeed, true});
-                    bullets.push_back({enemies[i].position, {0, -1}, eSpeed, true});
+                    bullets.push_back({enemies[i].position, {1, 0}, eSpeed, true, 0.0f});
+                    bullets.push_back({enemies[i].position, {-1, 0}, eSpeed, true, 0.0f});
+                    bullets.push_back({enemies[i].position, {0, 1}, eSpeed, true, 0.0f});
+                    bullets.push_back({enemies[i].position, {0, -1}, eSpeed, true, 0.0f});
                 }
                 else if(enemies[i].type == 2){
-                    bullets.push_back({enemies[i].position, {-0.70f, -0.70f}, eSpeed, true});
-                    bullets.push_back({enemies[i].position, {0.70f, -0.70f}, eSpeed, true});
-                    bullets.push_back({enemies[i].position, {0.70f, 0.70f}, eSpeed, true});
-                    bullets.push_back({enemies[i].position, {-0.70f, 0.70f}, eSpeed, true});
+                    bullets.push_back({enemies[i].position, {-0.70f, -0.70f}, eSpeed, true, 0.0f});
+                    bullets.push_back({enemies[i].position, {0.70f, -0.70f}, eSpeed, true, 0.0f});
+                    bullets.push_back({enemies[i].position, {0.70f, 0.70f}, eSpeed, true, 0.0f});
+                    bullets.push_back({enemies[i].position, {-0.70f, 0.70f}, eSpeed, true, 0.0f});
                 }
                 else if(enemies[i].type == 3){
-                    bullets.push_back({enemies[i].position, {dx, dy}, eSpeed, true});
+                    bullets.push_back({enemies[i].position, {dx, dy}, eSpeed, true, 0.0f});
                 }
             }
         }
 
         //ruch pocisku
         for(int i = bullets.size() - 1; i >= 0; i--){
+            float step = GetFrameTime() * bullets[i].speed;
+
             bullets[i].position.x += bullets[i].direction.x * GetFrameTime() * bullets[i].speed;
             bullets[i].position.y += bullets[i].direction.y * GetFrameTime() * bullets[i].speed;
+            bullets[i].attackRange += step;
             bool hitSomething = false;
+
+            if(!bullets[i].isEnemy && bullets[i].attackRange > 200.0f){
+                hitSomething = true;
+            }
             
+
             //kolizja pocisku z scianami pokoju   
             if(bullets[i].position.x < roomX || bullets[i].position.x > roomX + roomWidth ||
                bullets[i].position.y < roomY || bullets[i].position.y > roomY + roomHeight){
@@ -294,6 +303,8 @@ int main(){
                 DrawRectangleLines(hx, hy, 30, 30, RED); // puste serce
             }
         }
+
+        //ekran pauzy
         if (isPaused) {
             DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.6f));
             
