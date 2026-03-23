@@ -42,8 +42,8 @@ int main(){
 
 
     // definiowanie pokoju
-        float roomWidth = 1000;
-        float roomHeight = 600;
+        float roomWidth = 1400;
+        float roomHeight = 900;
         float roomX = (screenWidth - roomWidth) / 2.0f;
         float roomY = (screenHeight - roomHeight) / 2.0f;
 
@@ -51,6 +51,7 @@ int main(){
     vector<Rectangle> obstacles = {
              {roomX + 200, roomY + 150, 100 , 100},
              {roomX + 700, roomY + 300, 100 , 100}, 
+             {roomX + 1000, roomY + 500, 100 , 300}
     };
 
     vector<bullet> bullets;
@@ -61,7 +62,12 @@ int main(){
         {{roomX + 700, roomY + 200}, 50.0f, 20.0f, 1, 2.0f, 5},
         {{roomX + 100, roomY + 400}, 50.0f, 20.0f, 2, 3.0f, 5},
         {{roomX + 500, roomY + 100}, 50.0f, 20.0f, 3, 4.0f, 5},
+        {{roomX + 1000, roomY + 300}, 100.0f, 20.0f, 1, 5.0f, 5}
     };
+
+    //drzwi na prawej scianie
+    Rectangle rightDoor = {roomX + roomWidth - 50, roomY + roomHeight / 2.0f - 60, 50, 120};
+    int roomCount = 1;
 
     bool isPaused = false;
 
@@ -103,6 +109,15 @@ int main(){
         if (playerPos.x + playerSize >= roomX + roomWidth) playerPos.x = roomX + roomWidth - playerSize - 5;
         if (playerPos.y - playerSize <= roomY) playerPos.y = roomY + playerSize + 5;
         if (playerPos.y + playerSize >= roomY + roomHeight) playerPos.y = roomY + roomHeight - playerSize - 5;
+
+        //logika drzwi
+        if(CheckCollisionCircleRec(playerPos, playerSize, rightDoor)){
+            playerPos.x = roomX + playerSize + 20;
+            playerPos.y = roomY + roomHeight / 2.0f;
+            bullets.clear();
+            enemies.clear();
+            roomCount++;
+        }
 
         //strzelanie
         if(playerShootTimer <= 0.0f){
@@ -257,6 +272,16 @@ int main(){
         DrawRectangle(roomX, roomY, roomWidth, roomHeight, GREEN); //rysowanie pokoju
         Rectangle roomRect = {roomX, roomY, roomWidth, roomHeight}; //definiowanie prostokąta pokoju
         DrawRectangleLinesEx(roomRect, 5, DARKGREEN); //rysowanie obramowania pokoju
+        
+        //rysowanie drzwi
+        if(enemies.empty()){
+            DrawRectangleRec(rightDoor, BLACK); // Czarne wejście w głąb lochu
+            DrawText(">", rightDoor.x + 15, rightDoor.y + 40, 40, WHITE); // Strzałka
+        }
+        
+        DrawText(TextFormat("POKOJ: %d", roomCount), roomX + 10, roomY + 10, 20, DARKGREEN);
+        
+        
         Color playerColor = BLUE;
         if(invincibilityTimer > 0.0f){
             if((int)(invincibilityTimer * 10) % 2 == 0){
@@ -290,17 +315,17 @@ int main(){
         //rysowanie hp gracza
         int maxHearts = 3;
         for (int i = 0; i < maxHearts; i++){
-            int hx = 20 + i * 40; // odstep miedzy sercami
-            int hy = 20;
+            int hx = 50 + i * 60; // odstep miedzy sercami
+            int hy = 50;
             if(playerHp >= (i*2) + 2){
-                DrawRectangle(hx, hy, 30, 30, RED); // pelne serce
+                DrawRectangle(hx, hy, 40, 40, RED); // pelne serce
             }
             else if (playerHp >= (i*2) + 1){
-                DrawRectangle(hx, hy, 15, 30, RED); // czesc pelnego serca
-                DrawRectangleLines(hx, hy, 30, 30, RED); // pusta ramka
+                DrawRectangle(hx, hy, 20, 40, RED); // czesc pelnego serca
+                DrawRectangleLines(hx, hy, 40, 40, RED); // pusta ramka
             }
             else {
-                DrawRectangleLines(hx, hy, 30, 30, RED); // puste serce
+                DrawRectangleLines(hx, hy, 40, 40, RED); // puste serce
             }
         }
 
