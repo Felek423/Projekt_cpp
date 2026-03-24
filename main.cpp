@@ -104,19 +104,27 @@ int main(){
             }
         }
 
-        //ograniczenie ruchu gracza do obszaru pokoju
+        //oganiczenie ruchu gracza
         if (playerPos.x - playerSize <= roomX) playerPos.x = roomX + playerSize + 5;
-        if (playerPos.x + playerSize >= roomX + roomWidth) playerPos.x = roomX + roomWidth - playerSize - 5;
         if (playerPos.y - playerSize <= roomY) playerPos.y = roomY + playerSize + 5;
         if (playerPos.y + playerSize >= roomY + roomHeight) playerPos.y = roomY + roomHeight - playerSize - 5;
 
-        //logika drzwi
-        if(CheckCollisionCircleRec(playerPos, playerSize, rightDoor)){
-            playerPos.x = roomX + playerSize + 20;
-            playerPos.y = roomY + roomHeight / 2.0f;
-            bullets.clear();
-            enemies.clear();
-            roomCount++;
+        //  logika prawej ściany i drzwi
+        if (enemies.empty()) {
+            // pokoj jest pusty i drzwi sie otwieraja
+            if (CheckCollisionCircleRec(playerPos, playerSize, rightDoor)) {                playerPos.x = roomX + playerSize + 20;
+                playerPos.y = roomY + roomHeight / 2.0f;
+                bullets.clear();
+                roomCount++;
+            } 
+            else if (playerPos.x + playerSize >= roomX + roomWidth) {
+                playerPos.x = roomX + roomWidth - playerSize - 5;
+            }
+        } else {
+            // gdy przeciwnicy wciaz zyja drzwi sa zamkniete
+            if (playerPos.x + playerSize >= roomX + roomWidth) {
+                playerPos.x = roomX + roomWidth - playerSize - 5;
+            }
         }
 
         //strzelanie
@@ -156,12 +164,29 @@ int main(){
 
             float oldEnemyY = enemies[i].position.y; 
             enemies[i].position.y += dy * enemies[i].speed * GetFrameTime();
-            
+                
             for(Rectangle rocks : obstacles){
                 if(CheckCollisionCircleRec(enemies[i].position, enemies[i].size, rocks)){
                     enemies[i].position.y = oldEnemyY; 
                 }   
             }
+
+            for(int j = 0; j < enemies.size(); j++) {
+                if(i == j) continue; 
+                if(CheckCollisionCircles(enemies[i].position, enemies[i].size, enemies[j].position, enemies[j].size)){
+                    float pushX = enemies[i].position.x - enemies[j].position.x;
+                    float pushY = enemies[i].position.y - enemies[j].position.y;
+                    float distance = sqrt(pushX*pushX + pushY*pushY);
+                    if(distance > 0.0f){
+                        float overlap = (enemies[i].size + enemies[j].size) - distance;
+                        pushX /= distance;
+                        pushY /= distance;
+                        enemies[i].position.x += pushX * overlap * 2.0f;
+                        enemies[i].position.y += pushY * overlap * 2.0f;
+                    }
+                }
+            }
+
             enemies[i].shootTimer -= GetFrameTime();
             
             if (enemies[i].shootTimer <= 0.0f){
@@ -236,7 +261,7 @@ int main(){
                         if(CheckCollisionCircles(bullets[i].position, bulletSize, enemies[j].position, enemies[j].size)) {
                             hitSomething = true;
                             enemies[j].hp -= 1;
-                            if(enemies[j].hp <+ 0){
+                            if(enemies[j].hp <= 0){
                                 enemies.erase(enemies.begin() + j); 
                             }
                             break;
