@@ -73,6 +73,7 @@ int main(){
 
     while(!WindowShouldClose()){
 
+        //obsługa wlaczania i wylaczania menu pauzy po wcisnieciu ESC
         if(IsKeyPressed(KEY_ESCAPE)){
             isPaused = !isPaused;
         }
@@ -112,10 +113,34 @@ int main(){
         //  logika prawej ściany i drzwi
         if (enemies.empty()) {
             // pokoj jest pusty i drzwi sie otwieraja
-            if (CheckCollisionCircleRec(playerPos, playerSize, rightDoor)) {                playerPos.x = roomX + playerSize + 20;
+            if (CheckCollisionCircleRec(playerPos, playerSize, rightDoor)) {            
+                playerPos.x = roomX + playerSize + 20;
                 playerPos.y = roomY + roomHeight / 2.0f;
                 bullets.clear();
                 roomCount++;
+                obstacles.clear();
+
+                //nowe przeszkody
+                float size = 100.0f;
+                float margin = 50.0f;
+                obstacles.push_back({roomX + margin, roomY + margin, size, size});
+                obstacles.push_back({roomX + roomWidth - margin - size, roomY + margin, size, size});
+                obstacles.push_back({roomX + margin, roomY + roomHeight - margin - size, size, size});
+                obstacles.push_back({roomX + roomWidth - margin - size, roomY + roomHeight - margin - size, size, size});
+                // losowa liczba przeciwnikow (od 3 do 6)
+                int enemyCount = GetRandomValue(3, 6);
+                for(int i = 0; i < enemyCount; i++){
+                    //losowanie pozycji X tylko po prawej stronie,Y dowolne
+                    float ex = GetRandomValue(roomX + roomWidth / 2.0f, roomX + roomWidth - margin);
+                    float ey = GetRandomValue(roomY + margin, roomY + roomHeight - margin);
+
+                    int type = GetRandomValue(1, 3); // typ strzelania
+                    float speed = GetRandomValue(60, 120); // predkosc poruszania
+                    int hp = GetRandomValue(3, 6); // hp 
+
+                    enemies.push_back({{ex, ey}, speed, 20.0f, type, 2.0f, hp});
+                }
+
             } 
             else if (playerPos.x + playerSize >= roomX + roomWidth) {
                 playerPos.x = roomX + roomWidth - playerSize - 5;
@@ -171,13 +196,16 @@ int main(){
                 }   
             }
 
+            // odpychanie sie wrogow 
             for(int j = 0; j < enemies.size(); j++) {
                 if(i == j) continue; 
                 if(CheckCollisionCircles(enemies[i].position, enemies[i].size, enemies[j].position, enemies[j].size)){
+                    //obliczanie wektora miedzy wrogami i odległości
                     float pushX = enemies[i].position.x - enemies[j].position.x;
                     float pushY = enemies[i].position.y - enemies[j].position.y;
                     float distance = sqrt(pushX*pushX + pushY*pushY);
                     if(distance > 0.0f){
+                        // Odsunięcie wrogów od siebie o wartość nakładania się ich promieni (overlap)
                         float overlap = (enemies[i].size + enemies[j].size) - distance;
                         pushX /= distance;
                         pushY /= distance;
@@ -192,7 +220,7 @@ int main(){
             if (enemies[i].shootTimer <= 0.0f){
                 enemies[i].shootTimer = 2.0f;
                 float eSpeed = 200.0f;
-
+                //definiowanie atakow dla rozynych typow przeciwnikow
                 if(enemies[i].type == 1){
                     bullets.push_back({enemies[i].position, {1, 0}, eSpeed, true, 0.0f});
                     bullets.push_back({enemies[i].position, {-1, 0}, eSpeed, true, 0.0f});
@@ -361,11 +389,11 @@ int main(){
             const char* pauseText = "PAUZA";
             int textWidth = MeasureText(pauseText, 40);
             DrawText(pauseText, screenWidth/2 - textWidth/2, screenHeight/2 - 150, 40, WHITE);
-
+            //eysowanie przyciskow na ekranie pauzy
             Rectangle btnResume = { (float)screenWidth/2 - 100, (float)screenHeight/2 - 60, 200, 50 };
             Rectangle btnQuit = { (float)screenWidth/2 - 100, (float)screenHeight/2 + 10, 200, 50 };
             Vector2 mousePos = GetMousePosition();
-
+            //Jasniejszy kolor przycisku po najechaniu na niego
             Color resumeColor = CheckCollisionPointRec(mousePos, btnResume) ? LIGHTGRAY : GRAY;
             Color quitColor = CheckCollisionPointRec(mousePos, btnQuit) ? LIGHTGRAY : GRAY;
 
