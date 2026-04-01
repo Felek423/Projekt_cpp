@@ -30,7 +30,7 @@ int main(){
     //gracz
     Vector2 playerPos = {400, 300}; //pozycja gracza
     float playerSpeed = 200.0f; //szybkość gracza
-    float playerSize = 20.0f; //rozmiar gracza
+    float playerSize = 30.0f; //rozmiar gracza
     int playerHp = 6;
     float invincibilityTimer = 0.0f;
     float playerAttackSpeed = 0.6f;
@@ -58,11 +58,12 @@ int main(){
     float bulletSpeed = 150.0f;
     float bulletSize = 10.0f;
 
+    //definiowanie przeciwnikow 
     vector<enemy> enemies= {
         {{roomX + 700, roomY + 200}, 50.0f, 20.0f, 1, 2.0f, 5},
-        {{roomX + 100, roomY + 400}, 50.0f, 20.0f, 2, 3.0f, 5},
-        {{roomX + 500, roomY + 100}, 50.0f, 20.0f, 3, 4.0f, 5},
-        {{roomX + 1000, roomY + 300}, 100.0f, 20.0f, 1, 5.0f, 5}
+        {{roomX + 700, roomY + 200}, 50.0f, 20.0f, 2, 2.0f, 5},
+        {{roomX + 700, roomY + 200}, 50.0f, 20.0f, 3, 2.0f, 5}
+        
     };
 
     //drzwi na prawej scianie
@@ -169,6 +170,7 @@ int main(){
         
         //ruch wrogow (podazanie za graczem + kolizje ze skałami)
         for(int i = 0; i < enemies.size(); i++) {
+            // uzywanie twierdzenia Pitagorasa, aby wyliczyć najkrótszą drogę w linii prostej od wroga do gracza.
             float dx = playerPos.x - enemies[i].position.x;
             float dy = playerPos.y - enemies[i].position.y;
             float length = sqrt(dx*dx + dy*dy); 
@@ -177,13 +179,53 @@ int main(){
                 dx = dx / length;
                 dy = dy / length;
             }
-            
-            float oldEnemyX = enemies[i].position.x; // Zapisujemy starą pozycję X
+
+            // omijanie przeszkod
+            for(Rectangle rocks : obstacles) {
+                float closestX = fmaxf(rocks.x, fminf(enemies[i].position.x, rocks.x + rocks.width));
+                float closestY = fmaxf(rocks.y, fminf(enemies[i].position.y, rocks.y + rocks.height));
+
+                float diffX = enemies[i].position.x - closestX;
+                float diffY = enemies[i].position.y - closestY;
+                float distance = sqrt(diffX * diffX + diffY * diffY);
+
+                float buffer = 50.0f; 
+
+                if (distance < buffer) {
+                    if (distance == 0) { enemies[i].position.y -= 1; continue; }
+
+                    float dirX = diffX / distance;
+                    float dirY = diffY / distance;
+
+                    float pushForce = (buffer - distance) * 5.0f;
+                    enemies[i].position.x += dirX * pushForce * GetFrameTime();
+                    enemies[i].position.y += dirY * pushForce * GetFrameTime();
+
+                    float dotProduct = dx * (-dirX) + dy * (-dirY); 
+
+                    if (dotProduct > 0.3f) { 
+                        float slideX = -dirY; 
+                        float slideY = dirX;
+
+                        if (slideX * dx + slideY * dy < 0) {
+                            slideX = -slideX;
+                            slideY = -slideY;
+                        }
+
+                        float slideSpeed = enemies[i].speed * 1.2f; 
+                        enemies[i].position.x += slideX * slideSpeed * GetFrameTime();
+                        enemies[i].position.y += slideY * slideSpeed * GetFrameTime();
+                    }
+                }
+            }
+
+            // os Y Niezależne sprawdzanie osi Y
+            float oldEnemyX = enemies[i].position.x; 
             enemies[i].position.x += dx * enemies[i].speed * GetFrameTime();
             
             for(Rectangle rocks : obstacles){
                 if(CheckCollisionCircleRec(enemies[i].position, enemies[i].size, rocks)){
-                    enemies[i].position.x = oldEnemyX; // Cofamy ruch X, jeśli uderzył
+                    enemies[i].position.x = oldEnemyX; 
                 }
             }
 
@@ -196,16 +238,14 @@ int main(){
                 }   
             }
 
-            // odpychanie sie wrogow 
+            // odpychanie sie wrogow od siebie
             for(int j = 0; j < enemies.size(); j++) {
                 if(i == j) continue; 
                 if(CheckCollisionCircles(enemies[i].position, enemies[i].size, enemies[j].position, enemies[j].size)){
-                    //obliczanie wektora miedzy wrogami i odległości
                     float pushX = enemies[i].position.x - enemies[j].position.x;
                     float pushY = enemies[i].position.y - enemies[j].position.y;
                     float distance = sqrt(pushX*pushX + pushY*pushY);
                     if(distance > 0.0f){
-                        // Odsunięcie wrogów od siebie o wartość nakładania się ich promieni (overlap)
                         float overlap = (enemies[i].size + enemies[j].size) - distance;
                         pushX /= distance;
                         pushY /= distance;
@@ -220,7 +260,6 @@ int main(){
             if (enemies[i].shootTimer <= 0.0f){
                 enemies[i].shootTimer = 2.0f;
                 float eSpeed = 200.0f;
-                //definiowanie atakow dla rozynych typow przeciwnikow
                 if(enemies[i].type == 1){
                     bullets.push_back({enemies[i].position, {1, 0}, eSpeed, true, 0.0f});
                     bullets.push_back({enemies[i].position, {-1, 0}, eSpeed, true, 0.0f});
@@ -252,13 +291,11 @@ int main(){
                 hitSomething = true;
             }
             
-
-            //kolizja pocisku z scianami pokoju   
             if(bullets[i].position.x < roomX || bullets[i].position.x > roomX + roomWidth ||
                bullets[i].position.y < roomY || bullets[i].position.y > roomY + roomHeight){
                 hitSomething = true;
             }
-            //kolizzja pociksu z przeszkodami
+
             if(!hitSomething){
                 for(Rectangle rocks : obstacles){
                     if(CheckCollisionCircleRec(bullets[i].position, bulletSize, rocks)){
@@ -267,24 +304,21 @@ int main(){
                     }
                 }
             }
-            // Kolizja w zależności od właściciela pocisku
+
             if(!hitSomething) {
                 if (bullets[i].isEnemy) {
                     if(invincibilityTimer <= 0.0f){
-                    // Jeśli to pocisk przeciwnika, sprawdza kolizję z graczem
-                    if (CheckCollisionCircles(bullets[i].position, bulletSize, playerPos, playerSize)) {
-                        hitSomething = true;
-                        playerHp -= 1;  
-                        invincibilityTimer = 1.0f;
-                        if(playerHp <= 0){
-                            CloseWindow();
-                            return 0;
+                        if (CheckCollisionCircles(bullets[i].position, bulletSize, playerPos, playerSize)) {
+                            hitSomething = true;
+                            playerHp -= 1;  
+                            invincibilityTimer = 1.0f;
+                            if(playerHp <= 0){
+                                CloseWindow();
+                                return 0;
+                            }
                         }
-                    }
-                }    
-                    
+                    }    
                 } else {
-                    // Jeśli to pocisk gracza, sprawdza kolizję z przeciwnikami
                     for(int j = enemies.size() - 1; j >= 0; j--) {
                         if(CheckCollisionCircles(bullets[i].position, bulletSize, enemies[j].position, enemies[j].size)) {
                             hitSomething = true;
@@ -323,17 +357,16 @@ int main(){
         BeginDrawing(); 
         ClearBackground(GRAY);
         DrawRectangle(roomX, roomY, roomWidth, roomHeight, GREEN); //rysowanie pokoju
-        Rectangle roomRect = {roomX, roomY, roomWidth, roomHeight}; //definiowanie prostokąta pokoju
-        DrawRectangleLinesEx(roomRect, 5, DARKGREEN); //rysowanie obramowania pokoju
+        Rectangle roomRect = {roomX, roomY, roomWidth, roomHeight}; 
+        DrawRectangleLinesEx(roomRect, 5, DARKGREEN); 
         
         //rysowanie drzwi
         if(enemies.empty()){
-            DrawRectangleRec(rightDoor, BLACK); // Czarne wejście w głąb lochu
-            DrawText(">", rightDoor.x + 15, rightDoor.y + 40, 40, WHITE); // Strzałka
+            DrawRectangleRec(rightDoor, BLACK); 
+            DrawText(">", rightDoor.x + 15, rightDoor.y + 40, 40, WHITE); 
         }
         
         DrawText(TextFormat("POKOJ: %d", roomCount), roomX + 10, roomY + 10, 20, DARKGREEN);
-        
         
         Color playerColor = BLUE;
         if(invincibilityTimer > 0.0f){
@@ -342,6 +375,7 @@ int main(){
             }  
         }
         DrawCircleV(playerPos, playerSize, playerColor); //rysowanie gracza
+
         //rysowanie wrogow
         for(enemy e : enemies){
             Color enemyColor = PURPLE;
@@ -349,51 +383,42 @@ int main(){
             else if(e.type == 2) enemyColor = ORANGE;
             else if(e.type == 3) enemyColor = YELLOW;
             DrawCircleV(e.position, e.size, enemyColor);
-
         }
+
         //rysowanie przeszkod
         for(Rectangle rocks : obstacles){
-            DrawRectangleRec(rocks, BLACK);
-            DrawRectangleLinesEx(rocks, 5, DARKGRAY);
+            DrawRectangleRounded(rocks, 0.2f, 10, BLACK); 
+            DrawRectangleRoundedLinesEx(rocks, 0.2f, 10, 5.0f, DARKGRAY); 
         }
+
         //rysowanie pociskow
         for(bullet b: bullets){
-            if (b.isEnemy){
-                DrawCircleV(b.position, bulletSize, YELLOW);
-            }
-            else{
-                DrawCircleV(b.position, bulletSize, RED);
-            }
+            if (b.isEnemy) DrawCircleV(b.position, bulletSize, YELLOW);
+            else DrawCircleV(b.position, bulletSize, RED);
         }
+
         //rysowanie hp gracza
         int maxHearts = 3;
         for (int i = 0; i < maxHearts; i++){
-            int hx = 50 + i * 60; // odstep miedzy sercami
+            int hx = 50 + i * 60; 
             int hy = 50;
-            if(playerHp >= (i*2) + 2){
-                DrawRectangle(hx, hy, 40, 40, RED); // pelne serce
-            }
+            if(playerHp >= (i*2) + 2) DrawRectangle(hx, hy, 40, 40, RED); 
             else if (playerHp >= (i*2) + 1){
-                DrawRectangle(hx, hy, 20, 40, RED); // czesc pelnego serca
-                DrawRectangleLines(hx, hy, 40, 40, RED); // pusta ramka
+                DrawRectangle(hx, hy, 20, 40, RED); 
+                DrawRectangleLines(hx, hy, 40, 40, RED); 
             }
-            else {
-                DrawRectangleLines(hx, hy, 40, 40, RED); // puste serce
-            }
+            else DrawRectangleLines(hx, hy, 40, 40, RED); 
         }
 
         //ekran pauzy
         if (isPaused) {
             DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.6f));
-            
-            const char* pauseText = "PAUZA";
-            int textWidth = MeasureText(pauseText, 40);
-            DrawText(pauseText, screenWidth/2 - textWidth/2, screenHeight/2 - 150, 40, WHITE);
-            //eysowanie przyciskow na ekranie pauzy
+            DrawText("PAUZA", screenWidth/2 - MeasureText("PAUZA", 40)/2, screenHeight/2 - 150, 40, WHITE);
+
             Rectangle btnResume = { (float)screenWidth/2 - 100, (float)screenHeight/2 - 60, 200, 50 };
             Rectangle btnQuit = { (float)screenWidth/2 - 100, (float)screenHeight/2 + 10, 200, 50 };
             Vector2 mousePos = GetMousePosition();
-            //Jasniejszy kolor przycisku po najechaniu na niego
+
             Color resumeColor = CheckCollisionPointRec(mousePos, btnResume) ? LIGHTGRAY : GRAY;
             Color quitColor = CheckCollisionPointRec(mousePos, btnQuit) ? LIGHTGRAY : GRAY;
 
@@ -408,6 +433,4 @@ int main(){
         EndDrawing();
     } 
     return 0;
-}
-
-
+}  
