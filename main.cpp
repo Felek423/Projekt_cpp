@@ -60,10 +60,7 @@ int main(){
 
     //definiowanie przeciwnikow 
     vector<enemy> enemies= {
-        {{roomX + 700, roomY + 200}, 50.0f, 20.0f, 1, 2.0f, 5},
-        {{roomX + 700, roomY + 200}, 50.0f, 20.0f, 2, 2.0f, 5},
-        {{roomX + 700, roomY + 200}, 50.0f, 20.0f, 3, 2.0f, 5}
-        
+        {{roomX + 700, roomY + 200}, 150.0f, 20.0f, 1, 2.0f, 5}
     };
 
     //drzwi na prawej scianie
@@ -212,7 +209,21 @@ int main(){
                             slideY = -slideY;
                         }
 
-                        float slideSpeed = enemies[i].speed * 1.2f; 
+                        //wektor od srodka do przeszkod
+                        float rockCenterX = rocks.x + rocks.width / 2.0f;
+                        float rockCenterY = rocks.y + rocks.height / 2.0f;
+                        float toPlayerX = playerPos.x - rockCenterX;
+                        float toPlayerY = playerPos.y - rockCenterY;
+
+                        toPlayerX += 0.1f;
+                        toPlayerY += 0.1f;
+
+                        if (slideX * toPlayerX + slideY * toPlayerY < 0) {
+                            slideX = -slideX;
+                            slideY = -slideY;
+                        }
+
+                        float slideSpeed = enemies[i].speed; 
                         enemies[i].position.x += slideX * slideSpeed * GetFrameTime();
                         enemies[i].position.y += slideY * slideSpeed * GetFrameTime();
                     }
