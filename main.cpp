@@ -20,6 +20,12 @@ struct enemy{
     int hp;
 };
 
+struct pickup {
+    Vector2 position;
+    int type; // 1 = polowa serca
+    bool active;
+};
+
 int main(){
     int screenWidth = 800;
     int screenHeight = 600;
@@ -62,6 +68,11 @@ int main(){
     vector<enemy> enemies= {
         {{roomX + 700, roomY + 200}, 150.0f, 20.0f, 1, 2.0f, 5}
     };
+
+    //przedmioty
+    vector<pickup> pickups;
+    bool heartSpawnInThisRoom = false;
+
 
     //drzwi na prawej scianie
     Rectangle rightDoor = {roomX + roomWidth - 50, roomY + roomHeight / 2.0f - 60, 50, 120};
@@ -111,10 +122,17 @@ int main(){
 
         //  logika prawej ściany i drzwi
         if (enemies.empty()) {
+            //logika spawnowania serca jako nagrody
+            if (roomCount % 3 == 0 && !heartSpawnInThisRoom){
+                pickups.push_back({{roomX + roomWidth / 2.0f, roomY + roomHeight / 2.0f}, 1, true});
+                heartSpawnInThisRoom = true;
+                }
             // pokoj jest pusty i drzwi sie otwieraja
             if (CheckCollisionCircleRec(playerPos, playerSize, rightDoor)) {            
                 playerPos.x = roomX + playerSize + 20;
                 playerPos.y = roomY + roomHeight / 2.0f;
+                pickups.clear();// usuwanie niezebranych przedmiotow
+                heartSpawnInThisRoom = false; //reset watosci dla nowego pokoju
                 bullets.clear();
                 roomCount++;
                 obstacles.clear();
@@ -138,9 +156,10 @@ int main(){
                     int hp = GetRandomValue(3, 6); // hp 
 
                     enemies.push_back({{ex, ey}, speed, 20.0f, type, 2.0f, hp});
-                }
-
+                }                
             } 
+
+
             else if (playerPos.x + playerSize >= roomX + roomWidth) {
                 playerPos.x = roomX + roomWidth - playerSize - 5;
             }
@@ -150,7 +169,18 @@ int main(){
                 playerPos.x = roomX + roomWidth - playerSize - 5;
             }
         }
-
+        //logika zbierania przedmiotow 
+        for(int i = pickups.size() - 1; i >= 0; i--){
+            if(CheckCollisionCircles(playerPos, playerSize, pickups[i].position, 15.0f)){
+                if (playerHp < 6){
+                    playerHp += 1;
+                    if (playerHp > 6){
+                        playerHp = 6;
+                    }
+                    pickups.erase(pickups.begin() + i);
+                }
+            }
+        }
         //strzelanie
         if(playerShootTimer <= 0.0f){
             bool hasShot = false;
@@ -462,7 +492,19 @@ int main(){
             }
             else DrawRectangleLines(hx, hy, 40, 40, RED); 
         }
+        //rysowanie pickupow na ziemi  
+        for(pickup p : pickups){
+            if (p.type = 1)
+            {
+                float pulse = sin(GetTime() * 5.0f) * 2.0f;
 
+                DrawCircleV(p.position, 12.0f + pulse, RED);
+                DrawCircleV({p.position.x - 6, p.position.y - 4}, 6.0f + pulse/2, RED);
+                DrawCircleV({p.position.x + 6, p.position.y - 4}, 6.0f + pulse/2, RED);
+            }
+            
+            
+        }
         //ekran pauzy
         if (isPaused) {
             DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.6f));
