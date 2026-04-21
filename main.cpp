@@ -68,6 +68,7 @@ int main(){
     int roomCount = 1;
 
     bool isPaused = false;
+    bool isGameOver = false;
 
     while(!WindowShouldClose()){
 
@@ -75,7 +76,7 @@ int main(){
         if(IsKeyPressed(KEY_ESCAPE)){
             isPaused = !isPaused;
         }
-        if(!isPaused){
+        if(!isPaused && !isGameOver){
             if(invincibilityTimer > 0.0f){
                 invincibilityTimer -= GetFrameTime();
             }
@@ -177,6 +178,18 @@ int main(){
                 dy = dy / length;
             }
 
+            // Obrażenia od kontaktu z przeciwnikiem
+            if (invincibilityTimer <= 0.0f) {
+            if (length <= (playerSize + enemies[i].size)) {
+                playerHp -= 1;
+                invincibilityTimer = 1.0f; 
+                
+            if (playerHp <= 0) {
+                isGameOver = true;
+        }
+    }
+}
+
             // omijanie przeszkod
             for(Rectangle rocks : obstacles) {
                 float closestX = fmaxf(rocks.x, fminf(enemies[i].position.x, rocks.x + rocks.width));
@@ -203,13 +216,12 @@ int main(){
                     if (dotProduct > 0.3f) { 
                         float slideX = -dirY; 
                         float slideY = dirX;
-
                         if (slideX * dx + slideY * dy < 0) {
                             slideX = -slideX;
                             slideY = -slideY;
                         }
 
-                        //wektor od srodka do przeszkod
+                        //wektor od srodka do przeszkodS
                         float rockCenterX = rocks.x + rocks.width / 2.0f;
                         float rockCenterY = rocks.y + rocks.height / 2.0f;
                         float toPlayerX = playerPos.x - rockCenterX;
@@ -232,8 +244,9 @@ int main(){
 
             // os Y Niezależne sprawdzanie osi Y
             float oldEnemyX = enemies[i].position.x; 
-            enemies[i].position.x += dx * enemies[i].speed * GetFrameTime();
-            
+            if (length > playerSize + enemies[i].size) {
+              enemies[i].position.x += dx * enemies[i].speed * GetFrameTime();
+                }               
             for(Rectangle rocks : obstacles){
                 if(CheckCollisionCircleRec(enemies[i].position, enemies[i].size, rocks)){
                     enemies[i].position.x = oldEnemyX; 
@@ -241,7 +254,9 @@ int main(){
             }
 
             float oldEnemyY = enemies[i].position.y; 
-            enemies[i].position.y += dy * enemies[i].speed * GetFrameTime();
+            if (length > playerSize + enemies[i].size) {
+               enemies[i].position.y += dy * enemies[i].speed * GetFrameTime();
+                }
                 
             for(Rectangle rocks : obstacles){
                 if(CheckCollisionCircleRec(enemies[i].position, enemies[i].size, rocks)){
@@ -324,8 +339,7 @@ int main(){
                             playerHp -= 1;  
                             invincibilityTimer = 1.0f;
                             if(playerHp <= 0){
-                                CloseWindow();
-                                return 0;
+                                isGameOver = true;
                             }
                         }
                     }    
@@ -349,7 +363,7 @@ int main(){
         }
         
         }
-    else{
+        else if (isPaused){
             Rectangle btnResume = { (float)screenWidth/2 - 100, (float)screenHeight/2 - 60, 200, 50 };
             Rectangle btnQuit = { (float)screenWidth/2 - 100, (float)screenHeight/2 + 10, 200, 50 };
             Vector2 mousePos = GetMousePosition();
@@ -361,6 +375,34 @@ int main(){
                 if (CheckCollisionPointRec(mousePos, btnQuit)) {
                     CloseWindow(); 
                     return 0;      
+                }
+            }
+        }
+        else if (isGameOver) {
+            Rectangle btnRestart = { (float)screenWidth/2 - 100, (float)screenHeight/2 - 60, 200, 50 };
+            Rectangle btnQuit = { (float)screenWidth/2 - 100, (float)screenHeight/2 + 10, 200, 50 };
+            Vector2 mousePos = GetMousePosition();
+
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                if (CheckCollisionPointRec(mousePos, btnRestart)) {
+                    playerPos = {400, 300};
+                    playerHp = 6;
+                    invincibilityTimer = 0.0f;
+                    playerShootTimer = 0.0f;
+                    roomCount = 1;
+                    bullets.clear();
+                    enemies.clear();
+                    enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 20.0f, 1, 2.0f, 5});
+                    obstacles = {
+                        {roomX + 200, roomY + 150, 100 , 100},
+                        {roomX + 700, roomY + 300, 100 , 100}, 
+                        {roomX + 1000, roomY + 500, 100 , 300}
+                    };
+                    isGameOver = false;
+                }
+                if (CheckCollisionPointRec(mousePos, btnQuit)) {
+                    CloseWindow();
+                    return 0;
                 }
             }
         }
@@ -441,7 +483,27 @@ int main(){
             DrawRectangleLinesEx(btnQuit, 2, BLACK);
             DrawText("Wyjscie", btnQuit.x + 60, btnQuit.y + 15, 20, BLACK);
         }
+
+        if (isGameOver) {
+            DrawRectangle(0, 0, screenWidth, screenHeight, Fade(RED, 0.6f));
+            DrawText("KONIEC GRY", screenWidth/2 - MeasureText("KONIEC GRY", 40)/2, screenHeight/2 - 150, 40, WHITE);
+
+            Rectangle btnRestart = { (float)screenWidth/2 - 100, (float)screenHeight/2 - 60, 200, 50 };
+            Rectangle btnQuit = { (float)screenWidth/2 - 100, (float)screenHeight/2 + 10, 200, 50 };
+            Vector2 mousePos = GetMousePosition();
+
+            Color restartColor = CheckCollisionPointRec(mousePos, btnRestart) ? LIGHTGRAY : GRAY;
+            Color quitColor = CheckCollisionPointRec(mousePos, btnQuit) ? LIGHTGRAY : GRAY;
+
+            DrawRectangleRec(btnRestart, restartColor);
+            DrawRectangleLinesEx(btnRestart, 2, BLACK);
+            DrawText("Od nowa", btnRestart.x + 60, btnRestart.y + 15, 20, BLACK);
+
+            DrawRectangleRec(btnQuit, quitColor);
+            DrawRectangleLinesEx(btnQuit, 2, BLACK);
+            DrawText("Wyjscie", btnQuit.x + 60, btnQuit.y + 15, 20, BLACK);
+        }
         EndDrawing();
     } 
     return 0;
-}  
+}
