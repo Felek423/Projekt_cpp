@@ -1,6 +1,8 @@
 #include "raylib.h"
 #include <vector>
 #include <cmath>
+#include <map>
+#include <utility>
 using namespace std;    
 
 struct bullet{
@@ -26,6 +28,16 @@ struct pickup {
     bool active;
 };
 
+struct RoomData {
+    bool generated = false;
+    bool cleared = false;
+    bool heartSpawned = false;
+    bool hasTop = false, hasBottom = false, hasLeft = false, hasRight = false;
+    vector<enemy> enemies;
+    vector<pickup> pickups;
+    vector<Rectangle> obstacles;
+};
+
 int main(){
     int screenWidth = 800;
     int screenHeight = 600;
@@ -46,12 +58,11 @@ int main(){
     screenHeight = GetMonitorHeight(GetCurrentMonitor());    
     ToggleFullscreen();
 
-
     // definiowanie pokoju
-        float roomWidth = 1400;
-        float roomHeight = 900;
-        float roomX = (screenWidth - roomWidth) / 2.0f;
-        float roomY = (screenHeight - roomHeight) / 2.0f;
+    float roomWidth = 1400;
+    float roomHeight = 900;
+    float roomX = (screenWidth - roomWidth) / 2.0f;
+    float roomY = (screenHeight - roomHeight) / 2.0f;
 
     //definiowanie przeszkody
     vector<Rectangle> obstacles = {
@@ -71,12 +82,43 @@ int main(){
 
     //przedmioty
     vector<pickup> pickups;
-    bool heartSpawnInThisRoom = false;
+    
+    //mapa lochow
+    map<pair<int, int>, RoomData> dungeonMap;
+    int currentX = 0, currentY = 0;
+    int clearedRoomsCount = 1;
 
+    auto GenerateMap = [&]() {
+        dungeonMap.clear();
+        currentX = 0; currentY = 0;
+        int cx = 0, cy = 0;
+        dungeonMap[{cx, cy}].generated = true;
+        for (int i = 0; i < 15; i++) {
+            int dir = GetRandomValue(0, 3);
+            int px = cx, py = cy;
+            if (dir == 0) cy -= 1;
+            else if (dir == 1) cy += 1;
+            else if (dir == 2) cx -= 1;
+            else if (dir == 3) cx += 1;
 
-    //drzwi na prawej scianie
+            dungeonMap[{px, py}].generated = true;
+            dungeonMap[{cx, cy}].generated = true;
+            if (dir == 0) { dungeonMap[{px, py}].hasTop = true; dungeonMap[{cx, cy}].hasBottom = true; }
+            if (dir == 1) { dungeonMap[{px, py}].hasBottom = true; dungeonMap[{cx, cy}].hasTop = true; }
+            if (dir == 2) { dungeonMap[{px, py}].hasLeft = true; dungeonMap[{cx, cy}].hasRight = true; }
+            if (dir == 3) { dungeonMap[{px, py}].hasRight = true; dungeonMap[{cx, cy}].hasLeft = true; }
+        }
+    };
+
+    GenerateMap();
+    dungeonMap[{0, 0}].obstacles = obstacles;
+    dungeonMap[{0, 0}].enemies = enemies;
+
+    //drzwi
+    Rectangle topDoor = {roomX + roomWidth / 2.0f - 60, roomY, 120, 50};
+    Rectangle bottomDoor = {roomX + roomWidth / 2.0f - 60, roomY + roomHeight - 50, 120, 50};
+    Rectangle leftDoor = {roomX, roomY + roomHeight / 2.0f - 60, 50, 120};
     Rectangle rightDoor = {roomX + roomWidth - 50, roomY + roomHeight / 2.0f - 60, 50, 120};
-    int roomCount = 1;
 
     bool isPaused = false;
     bool isGameOver = false;
@@ -115,28 +157,79 @@ int main(){
             }
         }
 
-        //oganiczenie ruchu gracza
-        if (playerPos.x - playerSize <= roomX) playerPos.x = roomX + playerSize + 5;
-        if (playerPos.y - playerSize <= roomY) playerPos.y = roomY + playerSize + 5;
-        if (playerPos.y + playerSize >= roomY + roomHeight) playerPos.y = roomY + roomHeight - playerSize - 5;
+        RoomData& currentRoom = dungeonMap[{currentX, currentY}];
 
-        //  logika prawej ściany i drzwi
+        //oganiczenie ruchu gracza
+        float minX = roomX + playerSize;
+        float maxX = roomX + roomWidth - playerSize;
+        float minY = roomY + playerSize;
+        float maxY = roomY + roomHeight - playerSize;
+
+        if (enemies.empty()) {
+            if (currentRoom.hasLeft && playerPos.y > leftDoor.y && playerPos.y < leftDoor.y + leftDoor.height) minX = roomX - playerSize;
+            if (currentRoom.hasRight && playerPos.y > rightDoor.y && playerPos.y < rightDoor.y + rightDoor.height) maxX = roomX + roomWidth + playerSize;
+            if (currentRoom.hasTop && playerPos.x > topDoor.x && playerPos.x < topDoor.x + topDoor.width) minY = roomY - playerSize;
+            if (currentRoom.hasBottom && playerPos.x > bottomDoor.x && playerPos.x < bottomDoor.x + bottomDoor.width) maxY = roomY + roomHeight + playerSize;
+        }
+
+        if (playerPos.x < minX) playerPos.x = minX;
+        if (playerPos.x > maxX) playerPos.x = maxX;
+        if (playerPos.y < minY) playerPos.y = minY;
+        if (playerPos.y > maxY) playerPos.y = maxY;
+
+        // logika drzwi i przechodzenia miedzy pokojami
+        bool changedRoom = false;
+
         if (enemies.empty()) {
             //logika spawnowania serca jako nagrody
-            if (roomCount % 3 == 0 && !heartSpawnInThisRoom){
-                pickups.push_back({{roomX + roomWidth / 2.0f, roomY + roomHeight / 2.0f}, 1, true});
-                heartSpawnInThisRoom = true;
+            if (!currentRoom.cleared) {
+                currentRoom.cleared = true;
+                clearedRoomsCount++;
+                if (clearedRoomsCount % 3 == 0 && !currentRoom.heartSpawned){
+                    pickups.push_back({{roomX + roomWidth / 2.0f, roomY + roomHeight / 2.0f}, 1, true});
+                    currentRoom.heartSpawned = true;
                 }
-            // pokoj jest pusty i drzwi sie otwieraja
-            if (CheckCollisionCircleRec(playerPos, playerSize, rightDoor)) {            
-                playerPos.x = roomX + playerSize + 20;
-                playerPos.y = roomY + roomHeight / 2.0f;
-                pickups.clear();// usuwanie niezebranych przedmiotow
-                heartSpawnInThisRoom = false; //reset watosci dla nowego pokoju
-                bullets.clear();
-                roomCount++;
-                obstacles.clear();
+            }
 
+           // pokoj jest pusty i gracz wchodzi w drzwi
+            if (currentRoom.hasRight && CheckCollisionCircleRec(playerPos, playerSize, rightDoor) && playerPos.x > rightDoor.x + 20) {
+                currentRoom.pickups = pickups;
+                currentRoom.enemies = enemies; // Zapisuje pustą listę wrogów w pamięci pokoju!
+                currentX += 1;
+                playerPos.x = roomX + playerSize + 20;
+                changedRoom = true;
+            }
+            else if (currentRoom.hasLeft && CheckCollisionCircleRec(playerPos, playerSize, leftDoor) && playerPos.x < leftDoor.x + leftDoor.width - 20) {
+                currentRoom.pickups = pickups;
+                currentRoom.enemies = enemies; // Zapisuje pustą listę wrogów
+                currentX -= 1;
+                playerPos.x = roomX + roomWidth - playerSize - 20;
+                changedRoom = true;
+            }
+            else if (currentRoom.hasTop && CheckCollisionCircleRec(playerPos, playerSize, topDoor) && playerPos.y < topDoor.y + topDoor.height - 20) {
+                currentRoom.pickups = pickups;
+                currentRoom.enemies = enemies; // Zapisuje pustą listę wrogów
+                currentY -= 1;
+                playerPos.y = roomY + roomHeight - playerSize - 20;
+                changedRoom = true;
+            }
+            else if (currentRoom.hasBottom && CheckCollisionCircleRec(playerPos, playerSize, bottomDoor) && playerPos.y > bottomDoor.y + 20) {
+                currentRoom.pickups = pickups;
+                currentRoom.enemies = enemies; // Zapisuje pustą listę wrogów
+                currentY += 1;
+                playerPos.y = roomY + playerSize + 20;
+                changedRoom = true;
+            }
+        };
+
+        if (changedRoom) {
+            bullets.clear();
+            RoomData& nextRoom = dungeonMap[{currentX, currentY}];
+            pickups = nextRoom.pickups;
+
+            if (!nextRoom.cleared && nextRoom.enemies.empty()) {
+                obstacles.clear();
+                enemies.clear();
                 //nowe przeszkody
                 float size = 100.0f;
                 float margin = 50.0f;
@@ -144,31 +237,28 @@ int main(){
                 obstacles.push_back({roomX + roomWidth - margin - size, roomY + margin, size, size});
                 obstacles.push_back({roomX + margin, roomY + roomHeight - margin - size, size, size});
                 obstacles.push_back({roomX + roomWidth - margin - size, roomY + roomHeight - margin - size, size, size});
+                
                 // losowa liczba przeciwnikow (od 3 do 6)
                 int enemyCount = GetRandomValue(3, 6);
                 for(int i = 0; i < enemyCount; i++){
-                    //losowanie pozycji X tylko po prawej stronie,Y dowolne
-                    float ex = GetRandomValue(roomX + roomWidth / 2.0f, roomX + roomWidth - margin);
-                    float ey = GetRandomValue(roomY + margin, roomY + roomHeight - margin);
+                    //losowanie pozycji 
+                    float ex = GetRandomValue(roomX + margin + size, roomX + roomWidth - margin - size);
+                    float ey = GetRandomValue(roomY + margin + size, roomY + roomHeight - margin - size);
 
                     int type = GetRandomValue(1, 3); // typ strzelania
                     float speed = GetRandomValue(60, 120); // predkosc poruszania
                     int hp = GetRandomValue(3, 6); // hp 
 
                     enemies.push_back({{ex, ey}, speed, 20.0f, type, 2.0f, hp});
-                }                
-            } 
-
-
-            else if (playerPos.x + playerSize >= roomX + roomWidth) {
-                playerPos.x = roomX + roomWidth - playerSize - 5;
-            }
-        } else {
-            // gdy przeciwnicy wciaz zyja drzwi sa zamkniete
-            if (playerPos.x + playerSize >= roomX + roomWidth) {
-                playerPos.x = roomX + roomWidth - playerSize - 5;
+                }
+                nextRoom.obstacles = obstacles;
+                nextRoom.enemies = enemies;
+            } else {
+                obstacles = nextRoom.obstacles;
+                enemies = nextRoom.enemies;
             }
         }
+
         //logika zbierania przedmiotow 
         for(int i = pickups.size() - 1; i >= 0; i--){
             if(CheckCollisionCircles(playerPos, playerSize, pickups[i].position, 15.0f)){
@@ -181,10 +271,10 @@ int main(){
                 }
             }
         }
+
         //strzelanie
         if(playerShootTimer <= 0.0f){
             bool hasShot = false;
-
 
         if(IsKeyDown(KEY_UP)) { bullets.push_back({playerPos, {0, -1} , bulletSpeed, false, 10.0f}); hasShot = true; }
         else if(IsKeyDown(KEY_DOWN)) {bullets.push_back({playerPos, {0, 1} , bulletSpeed, false, 10.0f }); hasShot = true; }
@@ -297,17 +387,20 @@ int main(){
             // odpychanie sie wrogow od siebie
             for(int j = 0; j < enemies.size(); j++) {
                 if(i == j) continue; 
-                if(CheckCollisionCircles(enemies[i].position, enemies[i].size, enemies[j].position, enemies[j].size)){
-                    float pushX = enemies[i].position.x - enemies[j].position.x;
-                    float pushY = enemies[i].position.y - enemies[j].position.y;
-                    float distance = sqrt(pushX*pushX + pushY*pushY);
-                    if(distance > 0.0f){
-                        float overlap = (enemies[i].size + enemies[j].size) - distance;
-                        pushX /= distance;
-                        pushY /= distance;
-                        enemies[i].position.x += pushX * overlap * 2.0f;
-                        enemies[i].position.y += pushY * overlap * 2.0f;
-                    }
+                
+                float pushX = enemies[i].position.x - enemies[j].position.x;
+                float pushY = enemies[i].position.y - enemies[j].position.y;
+                float distance = sqrt(pushX*pushX + pushY*pushY);
+                
+                float margin = 25.0f; 
+                float desiredDistance = enemies[i].size + enemies[j].size + margin;
+
+                if(distance > 0.0f && distance < desiredDistance){
+                    float overlap = desiredDistance - distance;
+                    pushX /= distance;
+                    pushY /= distance;
+                    enemies[i].position.x += pushX * overlap * 0.5f;
+                    enemies[i].position.y += pushY * overlap * 0.5f;
                 }
             }
 
@@ -419,8 +512,9 @@ int main(){
                     playerHp = 6;
                     invincibilityTimer = 0.0f;
                     playerShootTimer = 0.0f;
-                    roomCount = 1;
+                    
                     bullets.clear();
+                    pickups.clear();
                     enemies.clear();
                     enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 20.0f, 1, 2.0f, 5});
                     obstacles = {
@@ -428,6 +522,10 @@ int main(){
                         {roomX + 700, roomY + 300, 100 , 100}, 
                         {roomX + 1000, roomY + 500, 100 , 300}
                     };
+                    clearedRoomsCount = 1;
+                    GenerateMap();
+                    dungeonMap[{0, 0}].obstacles = obstacles;
+                    dungeonMap[{0, 0}].enemies = enemies;
                     isGameOver = false;
                 }
                 if (CheckCollisionPointRec(mousePos, btnQuit)) {
@@ -445,11 +543,14 @@ int main(){
         
         //rysowanie drzwi
         if(enemies.empty()){
-            DrawRectangleRec(rightDoor, BLACK); 
-            DrawText(">", rightDoor.x + 15, rightDoor.y + 40, 40, WHITE); 
+            RoomData& drawRoom = dungeonMap[{currentX, currentY}];
+            if (drawRoom.hasTop) { DrawRectangleRec(topDoor, BLACK); DrawText("^", topDoor.x + 50, topDoor.y + 10, 40, WHITE); }
+            if (drawRoom.hasBottom) { DrawRectangleRec(bottomDoor, BLACK); DrawText("v", bottomDoor.x + 50, bottomDoor.y + 10, 40, WHITE); }
+            if (drawRoom.hasLeft) { DrawRectangleRec(leftDoor, BLACK); DrawText("<", leftDoor.x + 10, leftDoor.y + 40, 40, WHITE); }
+            if (drawRoom.hasRight) { DrawRectangleRec(rightDoor, BLACK); DrawText(">", rightDoor.x + 15, rightDoor.y + 40, 40, WHITE); }
         }
         
-        DrawText(TextFormat("POKOJ: %d", roomCount), roomX + 10, roomY + 10, 20, DARKGREEN);
+        DrawText(TextFormat("ZDOBYTE POKOJE: %d", clearedRoomsCount - 1), roomX + 10, roomY + 10, 20, DARKGREEN);
         
         Color playerColor = BLUE;
         if(invincibilityTimer > 0.0f){
@@ -480,6 +581,18 @@ int main(){
             else DrawCircleV(b.position, bulletSize, RED);
         }
 
+        //minimapa
+        for (auto const& [coords, room] : dungeonMap) {
+            if (room.generated) {
+                Color c = DARKGRAY;
+                if (coords.first == currentX && coords.second == currentY) c = GREEN;
+                else if (room.cleared) c = LIGHTGRAY;
+                DrawRectangle(roomX + roomWidth - 150 + (coords.first - currentX) * 15, 
+                              roomY + 50 + (coords.second - currentY) * 15, 
+                              13, 13, c);
+            }
+        }
+
         //rysowanie hp gracza
         int maxHearts = 3;
         for (int i = 0; i < maxHearts; i++){
@@ -494,7 +607,7 @@ int main(){
         }
         //rysowanie pickupow na ziemi  
         for(pickup p : pickups){
-            if (p.type = 1)
+            if (p.type == 1)
             {
                 float pulse = sin(GetTime() * 5.0f) * 2.0f;
 
