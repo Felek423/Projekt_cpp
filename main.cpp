@@ -29,6 +29,7 @@ struct pickup {
 };
 
 struct RoomData {
+    int type = 0; // 0 = zwykly, 1 = skarb
     bool generated = false;
     bool cleared = false;
     bool heartSpawned = false;
@@ -57,6 +58,7 @@ int main(){
     screenWidth = GetMonitorWidth(GetCurrentMonitor());
     screenHeight = GetMonitorHeight(GetCurrentMonitor());    
     ToggleFullscreen();
+
 
     // definiowanie pokoju
     float roomWidth = 1400;
@@ -107,6 +109,10 @@ int main(){
             if (dir == 1) { dungeonMap[{px, py}].hasBottom = true; dungeonMap[{cx, cy}].hasTop = true; }
             if (dir == 2) { dungeonMap[{px, py}].hasLeft = true; dungeonMap[{cx, cy}].hasRight = true; }
             if (dir == 3) { dungeonMap[{px, py}].hasRight = true; dungeonMap[{cx, cy}].hasLeft = true; }
+
+            if (i == 2) {
+                dungeonMap[{cx, cy}].type = 1; 
+            }
         }
     };
 
@@ -191,36 +197,36 @@ int main(){
                 }
             }
 
-           // pokoj jest pusty i gracz wchodzi w drzwi
+            // pokoj jest pusty i gracz wchodzi w drzwi
             if (currentRoom.hasRight && CheckCollisionCircleRec(playerPos, playerSize, rightDoor) && playerPos.x > rightDoor.x + 20) {
                 currentRoom.pickups = pickups;
-                currentRoom.enemies = enemies; // Zapisuje pustą listę wrogów w pamięci pokoju!
+                currentRoom.enemies = enemies;
                 currentX += 1;
                 playerPos.x = roomX + playerSize + 20;
                 changedRoom = true;
             }
             else if (currentRoom.hasLeft && CheckCollisionCircleRec(playerPos, playerSize, leftDoor) && playerPos.x < leftDoor.x + leftDoor.width - 20) {
                 currentRoom.pickups = pickups;
-                currentRoom.enemies = enemies; // Zapisuje pustą listę wrogów
+                currentRoom.enemies = enemies;
                 currentX -= 1;
                 playerPos.x = roomX + roomWidth - playerSize - 20;
                 changedRoom = true;
             }
             else if (currentRoom.hasTop && CheckCollisionCircleRec(playerPos, playerSize, topDoor) && playerPos.y < topDoor.y + topDoor.height - 20) {
                 currentRoom.pickups = pickups;
-                currentRoom.enemies = enemies; // Zapisuje pustą listę wrogów
+                currentRoom.enemies = enemies;
                 currentY -= 1;
                 playerPos.y = roomY + roomHeight - playerSize - 20;
                 changedRoom = true;
             }
             else if (currentRoom.hasBottom && CheckCollisionCircleRec(playerPos, playerSize, bottomDoor) && playerPos.y > bottomDoor.y + 20) {
                 currentRoom.pickups = pickups;
-                currentRoom.enemies = enemies; // Zapisuje pustą listę wrogów
+                currentRoom.enemies = enemies;
                 currentY += 1;
                 playerPos.y = roomY + playerSize + 20;
                 changedRoom = true;
             }
-        };
+        } 
 
         if (changedRoom) {
             bullets.clear();
@@ -230,29 +236,33 @@ int main(){
             if (!nextRoom.cleared && nextRoom.enemies.empty()) {
                 obstacles.clear();
                 enemies.clear();
-                //nowe przeszkody
-                float size = 100.0f;
-                float margin = 50.0f;
-                obstacles.push_back({roomX + margin, roomY + margin, size, size});
-                obstacles.push_back({roomX + roomWidth - margin - size, roomY + margin, size, size});
-                obstacles.push_back({roomX + margin, roomY + roomHeight - margin - size, size, size});
-                obstacles.push_back({roomX + roomWidth - margin - size, roomY + roomHeight - margin - size, size, size});
                 
-                // losowa liczba przeciwnikow (od 3 do 6)
-                int enemyCount = GetRandomValue(3, 6);
-                for(int i = 0; i < enemyCount; i++){
-                    //losowanie pozycji 
-                    float ex = GetRandomValue(roomX + margin + size, roomX + roomWidth - margin - size);
-                    float ey = GetRandomValue(roomY + margin + size, roomY + roomHeight - margin - size);
+                if (nextRoom.type == 1) {
+                    nextRoom.cleared = true;
+                    pickups.push_back({{roomX + roomWidth / 2.0f, roomY + roomHeight / 2.0f}, 2, true});
+                } 
+                else {
+                    float size = 100.0f;
+                    float margin = 50.0f;
+                    obstacles.push_back({roomX + margin, roomY + margin, size, size});
+                    obstacles.push_back({roomX + roomWidth - margin - size, roomY + margin, size, size});
+                    obstacles.push_back({roomX + margin, roomY + roomHeight - margin - size, size, size});
+                    obstacles.push_back({roomX + roomWidth - margin - size, roomY + roomHeight - margin - size, size, size});
 
-                    int type = GetRandomValue(1, 3); // typ strzelania
-                    float speed = GetRandomValue(60, 120); // predkosc poruszania
-                    int hp = GetRandomValue(3, 6); // hp 
+                    int enemyCount = GetRandomValue(3, 4);
+                    for(int i = 0; i < enemyCount; i++){
+                        float ex = GetRandomValue(roomX + margin + size, roomX + roomWidth - margin - size);
+                        float ey = GetRandomValue(roomY + margin + size, roomY + roomHeight - margin - size);
 
-                    enemies.push_back({{ex, ey}, speed, 20.0f, type, 2.0f, hp});
+                        int type = GetRandomValue(1, 3); 
+                        float speed = GetRandomValue(60, 120); 
+                        int hp = GetRandomValue(3, 6); 
+
+                        enemies.push_back({{ex, ey}, speed, 20.0f, type, 2.0f, hp});
+                    }
+                    nextRoom.obstacles = obstacles;
+                    nextRoom.enemies = enemies;
                 }
-                nextRoom.obstacles = obstacles;
-                nextRoom.enemies = enemies;
             } else {
                 obstacles = nextRoom.obstacles;
                 enemies = nextRoom.enemies;
@@ -262,11 +272,13 @@ int main(){
         //logika zbierania przedmiotow 
         for(int i = pickups.size() - 1; i >= 0; i--){
             if(CheckCollisionCircles(playerPos, playerSize, pickups[i].position, 15.0f)){
-                if (playerHp < 6){
+                if (pickups[i].type == 1 && playerHp < 6){
                     playerHp += 1;
-                    if (playerHp > 6){
-                        playerHp = 6;
-                    }
+                    pickups.erase(pickups.begin() + i);
+                }
+                else if (pickups[i].type == 2) {
+                    playerAttackSpeed -= 0.20f;
+                    if (playerAttackSpeed < 0.1f) playerAttackSpeed = 0.1f;
                     pickups.erase(pickups.begin() + i);
                 }
             }
@@ -436,7 +448,7 @@ int main(){
             bullets[i].attackRange += step;
             bool hitSomething = false;
 
-            if(!bullets[i].isEnemy && bullets[i].attackRange > 200.0f){
+            if(!bullets[i].isEnemy && bullets[i].attackRange > 300.0f){
                 hitSomething = true;
             }
             
@@ -512,6 +524,7 @@ int main(){
                     playerHp = 6;
                     invincibilityTimer = 0.0f;
                     playerShootTimer = 0.0f;
+                    playerAttackSpeed = 0.6f;
                     
                     bullets.clear();
                     pickups.clear();
@@ -581,14 +594,20 @@ int main(){
             else DrawCircleV(b.position, bulletSize, RED);
         }
 
-        //minimapa
+        // Tlo i rysowanie minimapy
+        DrawRectangle(screenWidth - 210, 10, 200, 200, Fade(BLACK, 0.5f));
+        DrawRectangleLines(screenWidth - 210, 10, 200, 200, WHITE);
+
         for (auto const& [coords, room] : dungeonMap) {
             if (room.generated) {
                 Color c = DARKGRAY;
                 if (coords.first == currentX && coords.second == currentY) c = GREEN;
+                else if (room.type == 1) c = GOLD; // Pokoj z przedmiotem na zloto
                 else if (room.cleared) c = LIGHTGRAY;
-                DrawRectangle(roomX + roomWidth - 150 + (coords.first - currentX) * 15, 
-                              roomY + 50 + (coords.second - currentY) * 15, 
+                
+                // Rysowanie kafelka na tle minimapy
+                DrawRectangle(screenWidth - 110 + (coords.first - currentX) * 15, 
+                              110 + (coords.second - currentY) * 15, 
                               13, 13, c);
             }
         }
@@ -610,13 +629,15 @@ int main(){
             if (p.type == 1)
             {
                 float pulse = sin(GetTime() * 5.0f) * 2.0f;
-
                 DrawCircleV(p.position, 12.0f + pulse, RED);
                 DrawCircleV({p.position.x - 6, p.position.y - 4}, 6.0f + pulse/2, RED);
                 DrawCircleV({p.position.x + 6, p.position.y - 4}, 6.0f + pulse/2, RED);
             }
-            
-            
+            else if (p.type == 2) {
+                float hover = sin(GetTime() * 4.0f) * 5.0f;
+                DrawRectangle(p.position.x - 10, p.position.y - 10 + hover, 20, 20, GOLD);
+                DrawRectangleLines(p.position.x - 10, p.position.y - 10 + hover, 20, 20, ORANGE);
+            }
         }
         //ekran pauzy
         if (isPaused) {
