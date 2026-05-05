@@ -1,1 +1,1 @@
-g++ main.cpp -lraylib -o Lochy -lGL -lm -lpthread -ldl -lrt -lX11
+g++ main.cpp game.cpp game_map.cpp game_entities.cpp game_render.cpp -o lochy -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
