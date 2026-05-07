@@ -28,6 +28,7 @@ Game::Game(int sw, int sh) {
 
     isPaused = false;
     isGameOver = false;
+    isVictory = false;
     clearedRoomsCount = 1;
 
     obstacles = {
@@ -36,7 +37,7 @@ Game::Game(int sw, int sh) {
         {roomX + 1000, roomY + 500, 100 , 300}
     };
 
-    enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 20.0f, 1, 2.0f, 5});
+    enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 20.0f, 1, 2.0f, 5, 0, 0});
 
     GenerateMap();
     dungeonMap[{0, 0}].obstacles = obstacles;

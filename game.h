@@ -12,6 +12,7 @@ public:
     
     bool isPaused;
     bool isGameOver;
+    bool isVictory;
 
 private:
     // funkcje logiczne, na które rozbiliśmy główną pętlę

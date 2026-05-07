@@ -17,6 +17,8 @@ struct enemy{
     int type; 
     float shootTimer; 
     int hp;
+    int burstBulletsLeft = 0;
+    int burstInterval = 0.0f;
 };
 
 struct pickup {

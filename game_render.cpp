@@ -34,6 +34,7 @@ void Game::DrawEntities() {
         if(e.type == 1) enemyColor = RED;
         else if(e.type == 2) enemyColor = ORANGE;
         else if(e.type == 3) enemyColor = YELLOW;
+        else if(e.type == 4) enemyColor = DARKPURPLE; // Wielki boss
         DrawCircleV(e.position, e.size, enemyColor);
     }
 
@@ -75,11 +76,23 @@ void Game::DrawUI() {
             Color c = DARKGRAY;
             if (coords.first == currentX && coords.second == currentY) c = GREEN;
             else if (room.type == 1) c = GOLD; 
+            else if (room.type == 3) c = RED; // NOWE: arene bossa widac z daleka na czerwono
             else if (room.cleared) c = LIGHTGRAY;
             
             DrawRectangle(screenWidth - 110 + (coords.first - currentX) * 15, 
                           110 + (coords.second - currentY) * 15, 
                           13, 13, c);
+        }
+    }
+
+   // wielki pasek zycia Bossa na dole ekranu
+    for(enemy e : enemies) {
+        if(e.type == 4) {
+            int barWidth = 600;
+            DrawRectangle(screenWidth/2 - barWidth/2, screenHeight - 60, barWidth, 30, DARKGRAY);
+            DrawRectangle(screenWidth/2 - barWidth/2, screenHeight - 60, (e.hp / 60.0f) * barWidth, 30, RED);
+            DrawRectangleLines(screenWidth/2 - barWidth/2, screenHeight - 60, barWidth, 30, BLACK);
+            DrawText("BOSS", screenWidth/2 - MeasureText("BOSS", 20)/2, screenHeight - 55, 20, WHITE);
         }
     }
 
@@ -119,10 +132,18 @@ void Game::DrawMenus() {
         DrawText("Wyjscie", btnQuit.x + 60, btnQuit.y + 15, 20, BLACK);
     }
 
-    // nakladka ekranu konca gry
+    // NOWE: Ekran konca gry LUB Wygranej
     if (isGameOver) {
-        DrawRectangle(0, 0, screenWidth, screenHeight, Fade(RED, 0.6f));
-        DrawText("KONIEC GRY", screenWidth/2 - MeasureText("KONIEC GRY", 40)/2, screenHeight/2 - 150, 40, WHITE);
+        // Ustawienie koloru i tekstu zależnie od zmiennej isVictory
+        Color overlayColor = isVictory ? Fade(GREEN, 0.6f) : Fade(RED, 0.6f);
+        const char* titleText = isVictory ? "ZWYCIESTWO!" : "KONIEC GRY";
+        
+        DrawRectangle(0, 0, screenWidth, screenHeight, overlayColor);
+        DrawText(titleText, screenWidth/2 - MeasureText(titleText, 40)/2, screenHeight/2 - 150, 40, WHITE);
+
+        // STATYSTYKI: Wciśnięte elegancko nad przyciskami
+        const char* statsText = TextFormat("Zdobyte pokoje: %d", clearedRoomsCount - 1);
+        DrawText(statsText, screenWidth/2 - MeasureText(statsText, 20)/2, screenHeight/2 - 100, 20, WHITE);
         
         Rectangle btnRestart = { (float)screenWidth/2 - 100, (float)screenHeight/2 - 60, 200, 50 };
         Rectangle btnQuit = { (float)screenWidth/2 - 100, (float)screenHeight/2 + 10, 200, 50 };
@@ -139,7 +160,7 @@ void Game::DrawMenus() {
         DrawRectangleLinesEx(btnQuit, 2, BLACK);
         DrawText("Wyjscie", btnQuit.x + 60, btnQuit.y + 15, 20, BLACK);
 
-        // obsługa resetowania wewnatrz gry jezeli gracz zginie
+        // obsługa resetowania wewnatrz gry
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             if (CheckCollisionPointRec(mousePos, btnRestart)) {
                 playerPos = {400, 300};
@@ -151,7 +172,7 @@ void Game::DrawMenus() {
                 bullets.clear();
                 pickups.clear();
                 enemies.clear();
-                enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 20.0f, 1, 2.0f, 5});
+                enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 20.0f, 1, 2.0f, 5, 0, 0});
                 obstacles = {
                     {roomX + 200, roomY + 150, 100 , 100},
                     {roomX + 700, roomY + 300, 100 , 100}, 
@@ -161,7 +182,9 @@ void Game::DrawMenus() {
                 GenerateMap();
                 dungeonMap[{0, 0}].obstacles = obstacles;
                 dungeonMap[{0, 0}].enemies = enemies;
+                
                 isGameOver = false;
+                isVictory = false; // Reset statusu wygranej przy nowej grze
             }
         }
     }

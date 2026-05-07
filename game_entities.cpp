@@ -181,26 +181,49 @@ void Game::UpdateEnemies() {
         }
 
         // strzelanie wrogow
-        enemies[i].shootTimer -= GetFrameTime();
-        if (enemies[i].shootTimer <= 0.0f){
-            enemies[i].shootTimer = 2.0f;
-            float eSpeed = 200.0f;
-            if(enemies[i].type == 1){
-                bullets.push_back({enemies[i].position, {1, 0}, eSpeed, true, 0.0f});
-                bullets.push_back({enemies[i].position, {-1, 0}, eSpeed, true, 0.0f});
-                bullets.push_back({enemies[i].position, {0, 1}, eSpeed, true, 0.0f});
-                bullets.push_back({enemies[i].position, {0, -1}, eSpeed, true, 0.0f});
+        if (enemies[i].type == 4) {
+            // logika ataku Bossa (typ 4)
+            if (enemies[i].burstBulletsLeft > 0) {
+                // strzelanie w serii
+                enemies[i].burstInterval -= GetFrameTime();
+                if (enemies[i].burstInterval <= 0.0f) {
+                    float eSpeed = 450.0f; // pociski bossa lecą nieco szybciej
+                    bullets.push_back({enemies[i].position, {dx, dy}, eSpeed, true, 0.0f});
+                    enemies[i].burstBulletsLeft--;
+                    enemies[i].burstInterval = 0.1f; // mala przerwa zeby powstal piekny "strumien"
+                }
+            } else {
+                // oczekiwanie na kolejny atak
+                enemies[i].shootTimer -= GetFrameTime();
+                if (enemies[i].shootTimer <= 0.0f) {
+                    enemies[i].shootTimer = 2.5f;     // przeladowanie 3 sekundy
+                    enemies[i].burstBulletsLeft = 80; // 20 strzalow na cel
+                    enemies[i].burstInterval = 0.0f;  // pierwszy strzal serii startuje od razu
+                }
             }
-            else if(enemies[i].type == 2){
-                bullets.push_back({enemies[i].position, {-0.70f, -0.70f}, eSpeed, true, 0.0f});
-                bullets.push_back({enemies[i].position, {0.70f, -0.70f}, eSpeed, true, 0.0f});
-                bullets.push_back({enemies[i].position, {0.70f, 0.70f}, eSpeed, true, 0.0f});
-                bullets.push_back({enemies[i].position, {-0.70f, 0.70f}, eSpeed, true, 0.0f});
+        } else {
+            // logika zwyklych wrogow (krzyz, skos, wycelowany)
+            enemies[i].shootTimer -= GetFrameTime();
+            if (enemies[i].shootTimer <= 0.0f){
+                enemies[i].shootTimer = 2.0f;
+                float eSpeed = 200.0f;
+                if(enemies[i].type == 1){
+                    bullets.push_back({enemies[i].position, {1, 0}, eSpeed, true, 0.0f});
+                    bullets.push_back({enemies[i].position, {-1, 0}, eSpeed, true, 0.0f});
+                    bullets.push_back({enemies[i].position, {0, 1}, eSpeed, true, 0.0f});
+                    bullets.push_back({enemies[i].position, {0, -1}, eSpeed, true, 0.0f});
+                }
+                else if(enemies[i].type == 2){
+                    bullets.push_back({enemies[i].position, {-0.70f, -0.70f}, eSpeed, true, 0.0f});
+                    bullets.push_back({enemies[i].position, {0.70f, -0.70f}, eSpeed, true, 0.0f});
+                    bullets.push_back({enemies[i].position, {0.70f, 0.70f}, eSpeed, true, 0.0f});
+                    bullets.push_back({enemies[i].position, {-0.70f, 0.70f}, eSpeed, true, 0.0f});
+                }
+                else if(enemies[i].type == 3){
+                    bullets.push_back({enemies[i].position, {dx, dy}, eSpeed, true, 0.0f});
+                }
             }
-            else if(enemies[i].type == 3){
-                bullets.push_back({enemies[i].position, {dx, dy}, eSpeed, true, 0.0f});
-            }
-        }
+        } 
     }
 }
 
@@ -249,6 +272,10 @@ void Game::UpdateBullets() {
                         hitSomething = true;
                         enemies[j].hp -= 1;
                         if(enemies[j].hp <= 0){
+                            if(enemies[j].type == 4){
+                                isVictory = true;
+                                isGameOver = true;
+                            }
                             enemies.erase(enemies.begin() + j);
                         }
                         break;

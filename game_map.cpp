@@ -1,11 +1,16 @@
 #include "game.h"
+#include <cmath> 
 
 void Game::GenerateMap() {
     dungeonMap.clear();
     currentX = 0; currentY = 0;
     int cx = 0, cy = 0;
     dungeonMap[{cx, cy}].generated = true;
-    for (int i = 0; i < 15; i++) {
+
+    int maxDist = 0;
+    int bossX = 0, bossY = 0;
+
+    for (int i = 0; i < 3; i++) {
         int dir = GetRandomValue(0, 3);
         int px = cx, py = cy;
         if (dir == 0) cy -= 1;
@@ -20,10 +25,22 @@ void Game::GenerateMap() {
         if (dir == 2) { dungeonMap[{px, py}].hasLeft = true; dungeonMap[{cx, cy}].hasRight = true; }
         if (dir == 3) { dungeonMap[{px, py}].hasRight = true; dungeonMap[{cx, cy}].hasLeft = true; }
 
+        // Skarbiec
         if (i == 2) {
             dungeonMap[{cx, cy}].type = 1;
         }
+
+        // Szukamy najdalszego pokoju na Bossa
+        int dist = abs(cx) + abs(cy);
+        if (dist >= maxDist && dungeonMap[{cx, cy}].type != 1 && (cx != 0 || cy != 0)) {
+            maxDist = dist;
+            bossX = cx;
+            bossY = cy;
+        }
     }
+    
+    // ZAPISANIE BOSSA NA MAPIE
+    dungeonMap[{bossX, bossY}].type = 3;
 }
 
 void Game::CheckRoomTransitions() {
@@ -31,7 +48,6 @@ void Game::CheckRoomTransitions() {
     bool changedRoom = false;
 
     if (enemies.empty()) {
-        // logika spawnowania serca jako nagrody
         if (!currentRoom.cleared) {
             currentRoom.cleared = true;
             clearedRoomsCount++;
@@ -41,34 +57,17 @@ void Game::CheckRoomTransitions() {
             }
         }
 
-        // pokoj jest pusty i gracz wchodzi w drzwi
         if (currentRoom.hasRight && CheckCollisionCircleRec(playerPos, playerSize, rightDoor) && playerPos.x > rightDoor.x + 20) {
-            currentRoom.pickups = pickups;
-            currentRoom.enemies = enemies;
-            currentX += 1;
-            playerPos.x = roomX + playerSize + 20;
-            changedRoom = true;
+            currentRoom.pickups = pickups; currentRoom.enemies = enemies; currentX += 1; playerPos.x = roomX + playerSize + 20; changedRoom = true;
         }
         else if (currentRoom.hasLeft && CheckCollisionCircleRec(playerPos, playerSize, leftDoor) && playerPos.x < leftDoor.x + leftDoor.width - 20) {
-            currentRoom.pickups = pickups;
-            currentRoom.enemies = enemies;
-            currentX -= 1;
-            playerPos.x = roomX + roomWidth - playerSize - 20;
-            changedRoom = true;
+            currentRoom.pickups = pickups; currentRoom.enemies = enemies; currentX -= 1; playerPos.x = roomX + roomWidth - playerSize - 20; changedRoom = true;
         }
         else if (currentRoom.hasTop && CheckCollisionCircleRec(playerPos, playerSize, topDoor) && playerPos.y < topDoor.y + topDoor.height - 20) {
-            currentRoom.pickups = pickups;
-            currentRoom.enemies = enemies;
-            currentY -= 1;
-            playerPos.y = roomY + roomHeight - playerSize - 20;
-            changedRoom = true;
+            currentRoom.pickups = pickups; currentRoom.enemies = enemies; currentY -= 1; playerPos.y = roomY + roomHeight - playerSize - 20; changedRoom = true;
         }
         else if (currentRoom.hasBottom && CheckCollisionCircleRec(playerPos, playerSize, bottomDoor) && playerPos.y > bottomDoor.y + 20) {
-            currentRoom.pickups = pickups;
-            currentRoom.enemies = enemies;
-            currentY += 1;
-            playerPos.y = roomY + playerSize + 20;
-            changedRoom = true;
+            currentRoom.pickups = pickups; currentRoom.enemies = enemies; currentY += 1; playerPos.y = roomY + playerSize + 20; changedRoom = true;
         }
     } 
 
@@ -85,9 +84,16 @@ void Game::CheckRoomTransitions() {
                 nextRoom.cleared = true;
                 pickups.push_back({{roomX + roomWidth / 2.0f, roomY + roomHeight / 2.0f}, 2, true});
             } 
+            else if (nextRoom.type == 3) {
+                // POKOJ BOSSA 
+                float bx = roomX + roomWidth / 2.0f;
+                float by = roomY + roomHeight / 2.0f;
+                enemies.push_back({{bx, by}, 50.0f, 60.0f, 4, 3.0f, 60, 0, 0});
+                nextRoom.enemies = enemies;
+            }
             else {
-                float size = 100.0f;
-                float margin = 50.0f;
+                // Zwykly pokoj
+                float size = 100.0f; float margin = 50.0f;
                 obstacles.push_back({roomX + margin, roomY + margin, size, size});
                 obstacles.push_back({roomX + roomWidth - margin - size, roomY + margin, size, size});
                 obstacles.push_back({roomX + margin, roomY + roomHeight - margin - size, size, size});
@@ -101,7 +107,7 @@ void Game::CheckRoomTransitions() {
                     float speed = GetRandomValue(60, 120); 
                     int hp = GetRandomValue(3, 6); 
 
-                    enemies.push_back({{ex, ey}, speed, 20.0f, type, 2.0f, hp});
+                    enemies.push_back({{ex, ey}, speed, 20.0f, type, 2.0f, hp, 0, 0});
                 }
                 nextRoom.obstacles = obstacles;
                 nextRoom.enemies = enemies;
