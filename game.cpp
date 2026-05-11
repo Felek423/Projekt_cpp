@@ -13,12 +13,22 @@ Game::Game(int sw, int sh) {
     playerAttackSpeed = 0.6f;
     playerShootTimer = 0.0f;
 
-    // ladowanie grafiki    
-    Image image = LoadImage("mag.png"); 
-
+    // ladowanie grafiki  
     
+    //bohATERA
+    Image image = LoadImage("mag.png"); 
     playerSprite = LoadTextureFromImage(image); 
     UnloadImage(image);
+
+    for(int i = 0; i < 5; i++) {
+        hasEnemySprite[i] = false;
+    }
+
+    //wrog typ 3
+    Image imageT3 = LoadImage("enemy.png"); 
+    enemySprites[3] = LoadTextureFromImage(imageT3); 
+    hasEnemySprite[3] = true; // Zaznaczamy, że typ 3 ma grafikę
+    UnloadImage(imageT3);
 
     // Ustawienia animacji 4x4
     maxFrames = 4;           
@@ -56,7 +66,7 @@ Game::Game(int sw, int sh) {
         {roomX + 1000, roomY + 500, 100 , 300}
     };
 
-    enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 20.0f, 1, 2.0f, 5, 0, 0});
+    enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 20.0f, 3, 2.0f, 5, 0, 0});
 
     GenerateMap();
     dungeonMap[{0, 0}].obstacles = obstacles;
@@ -86,4 +96,8 @@ void Game::Draw() {
 
 Game::~Game() {
     UnloadTexture(playerSprite);
+    UnloadTexture(enemyType3Sprite); 
+    for(int i = 1; i <= 4; i++){
+        if(hasEnemySprite[i]) UnloadTexture(enemySprites[i]);
+    }
 }

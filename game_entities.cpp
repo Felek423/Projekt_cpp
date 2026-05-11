@@ -3,7 +3,7 @@
 
 void Game::UpdatePlayerMovement() {
     Vector2 oldPos = playerPos;
-    isMoving = false; 
+    isMoving = false;
 
     // Oś Y (Góra / Dół) - playerDir 1 to góra, 0 to dół
     if(IsKeyDown(KEY_W)) { playerPos.y -= playerSpeed * GetFrameTime(); isMoving = true; playerDir = 1; flipX = false; } 
@@ -24,16 +24,15 @@ void Game::UpdatePlayerMovement() {
         frameTimer += GetFrameTime();
         if (frameTimer >= frameSpeed) {
             frameTimer = 0.0f; 
-            currentFrame++;    
+            currentFrame++;
             if (currentFrame >= maxFrames) currentFrame = 0; 
         }
     } else {
-        currentFrame = 0; 
+        currentFrame = 0;
         frameTimer = 0.0f;
     }
 
     RoomData& currentRoom = dungeonMap[{currentX, currentY}];
-
     // ograniczenie ruchu gracza i sprawdzanie wyjsc
     float minX = roomX + playerSize;
     float maxX = roomX + roomWidth - playerSize;
@@ -91,6 +90,22 @@ void Game::UpdateEnemies() {
         float dx = playerPos.x - enemies[i].position.x;
         float dy = playerPos.y - enemies[i].position.y;
         float length = sqrt(dx*dx + dy*dy);
+        
+        // --- NOWE: Uniwersalna animacja i ustalanie kierunku ---
+        if (fabsf(dx) > fabsf(dy)) {
+            enemies[i].directionRow = (dx > 0) ? 3 : 2; // Prawo : Lewo
+        } else {
+            enemies[i].directionRow = (dy > 0) ? 0 : 1; // Dół : Góra
+        }
+
+        enemies[i].frameTimer += GetFrameTime();
+        if (enemies[i].frameTimer >= 0.15f) { 
+            enemies[i].frameTimer = 0.0f; 
+            enemies[i].currentFrame++;    
+            if (enemies[i].currentFrame >= 4) enemies[i].currentFrame = 0; 
+        }
+        // -------------------------------------------------------
+
         if(length > 0) {
             dx = dx / length;
             dy = dy / length;
@@ -115,7 +130,6 @@ void Game::UpdateEnemies() {
             float diffY = enemies[i].position.y - closestY;
             float distance = sqrt(diffX * diffX + diffY * diffY);
             float buffer = 50.0f;
-
             if (distance < buffer) {
                 if (distance == 0) { enemies[i].position.y -= 1; continue; }
                 float dirX = diffX / distance;
@@ -123,7 +137,6 @@ void Game::UpdateEnemies() {
                 float pushForce = (buffer - distance) * 5.0f;
                 enemies[i].position.x += dirX * pushForce * GetFrameTime();
                 enemies[i].position.y += dirY * pushForce * GetFrameTime();
-
                 float dotProduct = dx * (-dirX) + dy * (-dirY);
                 if (dotProduct > 0.3f) { 
                     float slideX = -dirY;
@@ -152,9 +165,9 @@ void Game::UpdateEnemies() {
             }
         }
 
-        // os Y Niezależne sprawdzanie osi Y
+        // Zwykły ruch w stronę gracza (Typ 4 - Boss stoi w miejscu)
         float oldEnemyX = enemies[i].position.x;
-        if (length > playerSize + enemies[i].size) {
+        if (enemies[i].type != 4 && length > playerSize + enemies[i].size) {
             enemies[i].position.x += dx * enemies[i].speed * GetFrameTime();
         }               
         for(Rectangle rocks : obstacles){
@@ -164,7 +177,7 @@ void Game::UpdateEnemies() {
         }
 
         float oldEnemyY = enemies[i].position.y;
-        if (length > playerSize + enemies[i].size) {
+        if (enemies[i].type != 4 && length > playerSize + enemies[i].size) {
             enemies[i].position.y += dy * enemies[i].speed * GetFrameTime();
         }
             
@@ -207,9 +220,9 @@ void Game::UpdateEnemies() {
                 // oczekiwanie na kolejny atak
                 enemies[i].shootTimer -= GetFrameTime();
                 if (enemies[i].shootTimer <= 0.0f) {
-                    enemies[i].shootTimer = 2.5f;     // przeladowanie 3 sekundy
-                    enemies[i].burstBulletsLeft = 80; // 20 strzalow na cel
-                    enemies[i].burstInterval = 0.0f;  // pierwszy strzal serii startuje od razu
+                    enemies[i].shootTimer = 2.5f; // przeladowanie 3 sekundy
+                    enemies[i].burstBulletsLeft = 80; // strzaly na cel
+                    enemies[i].burstInterval = 0.0f; // pierwszy strzal serii startuje od razu
                 }
             }
         } else {

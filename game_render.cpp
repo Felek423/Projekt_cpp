@@ -18,15 +18,15 @@ void Game::DrawRoom() {
     DrawText(TextFormat("ZDOBYTE POKOJE: %d", clearedRoomsCount - 1), roomX + 10, roomY + 10, 20, DARKGREEN);
 }
 
-   void Game::DrawEntities() {
+void Game::DrawEntities() {
     // rysowanie gracza z grafiki
     Color playerTint = WHITE;
     if(invincibilityTimer > 0.0f && (int)(invincibilityTimer * 10) % 2 == 0) {
-        playerTint = RED; 
+        playerTint = RED;
     }
     
     // Arkusz ma 4 klatki w poziomie i 4 rzędy w pionie
-    float frameWidth = (float)playerSprite.width / 4; 
+    float frameWidth = (float)playerSprite.width / 4;
     float frameHeight = (float)playerSprite.height / 4; 
 
     Rectangle sourceRec = {
@@ -35,22 +35,44 @@ void Game::DrawRoom() {
         flipX ? -frameWidth : frameWidth, // Ujemna wartość odbija w prawo
         frameHeight
     };
-
+    
     Vector2 destPos = { 
         playerPos.x - (frameWidth / 2), 
         playerPos.y - (frameHeight / 2) 
     };
-
+    
     DrawTextureRec(playerSprite, sourceRec, destPos, playerTint);
 
-    // rysowanie wrogow z kolorami typow strzalow
+    // --- NOWE: inteligentne rysowanie wrogow z fallbackiem (zapasowym kółkiem) ---
     for(enemy e : enemies){
-        Color enemyColor = PURPLE;
-        if(e.type == 1) enemyColor = RED;
-        else if(e.type == 2) enemyColor = ORANGE;
-        else if(e.type == 3) enemyColor = YELLOW;
-        else if(e.type == 4) enemyColor = DARKPURPLE; // Wielki boss
-        DrawCircleV(e.position, e.size, enemyColor);
+        // Sprawdzamy, czy dla tego typu wroga mamy już załadowaną grafikę
+        if(hasEnemySprite[e.type]) {
+            // Rysujemy grafikę z arkusza!
+            float eFrameWidth = (float)enemySprites[e.type].width / 4; 
+            float eFrameHeight = (float)enemySprites[e.type].height / 4; 
+
+            Rectangle eSourceRec = {
+                e.currentFrame * eFrameWidth,  
+                e.directionRow * eFrameHeight, 
+                eFrameWidth,
+                eFrameHeight
+            };
+
+            Vector2 eDestPos = { 
+                e.position.x - (eFrameWidth / 2), 
+                e.position.y - (eFrameHeight / 2) 
+            };
+
+            DrawTextureRec(enemySprites[e.type], eSourceRec, eDestPos, WHITE);
+        } else {
+            // Jeśli nie ma grafiki, rysujemy stare kolorowe kółko
+            Color enemyColor = PURPLE;
+            if(e.type == 1) enemyColor = RED;
+            else if(e.type == 2) enemyColor = ORANGE;
+            else if(e.type == 3) enemyColor = YELLOW;
+            else if(e.type == 4) enemyColor = DARKPURPLE; // Wielki boss
+            DrawCircleV(e.position, e.size, enemyColor);
+        }
     }
 
     // rysowanie przeszkod
@@ -90,10 +112,9 @@ void Game::DrawUI() {
         if (room.generated) {
             Color c = DARKGRAY;
             if (coords.first == currentX && coords.second == currentY) c = GREEN;
-            else if (room.type == 1) c = GOLD; 
+            else if (room.type == 1) c = GOLD;
             else if (room.type == 3) c = RED; // NOWE: arene bossa widac z daleka na czerwono
             else if (room.cleared) c = LIGHTGRAY;
-            
             DrawRectangle(screenWidth - 110 + (coords.first - currentX) * 15, 
                           110 + (coords.second - currentY) * 15, 
                           13, 13, c);
@@ -130,11 +151,9 @@ void Game::DrawMenus() {
     if (isPaused) {
         DrawRectangle(0, 0, screenWidth, screenHeight, Fade(BLACK, 0.6f));
         DrawText("PAUZA", screenWidth/2 - MeasureText("PAUZA", 40)/2, screenHeight/2 - 150, 40, WHITE);
-        
         Rectangle btnResume = { (float)screenWidth/2 - 100, (float)screenHeight/2 - 60, 200, 50 };
         Rectangle btnQuit = { (float)screenWidth/2 - 100, (float)screenHeight/2 + 10, 200, 50 };
         Vector2 mousePos = GetMousePosition();
-        
         Color resumeColor = CheckCollisionPointRec(mousePos, btnResume) ? LIGHTGRAY : GRAY;
         Color quitColor = CheckCollisionPointRec(mousePos, btnQuit) ? LIGHTGRAY : GRAY;
 
@@ -147,7 +166,7 @@ void Game::DrawMenus() {
         DrawText("Wyjscie", btnQuit.x + 60, btnQuit.y + 15, 20, BLACK);
     }
 
-    // NOWE: Ekran konca gry LUB Wygranej
+    // Ekran konca gry LUB Wygranej
     if (isGameOver) {
         // Ustawienie koloru i tekstu zależnie od zmiennej isVictory
         Color overlayColor = isVictory ? Fade(GREEN, 0.6f) : Fade(RED, 0.6f);
@@ -155,8 +174,8 @@ void Game::DrawMenus() {
         
         DrawRectangle(0, 0, screenWidth, screenHeight, overlayColor);
         DrawText(titleText, screenWidth/2 - MeasureText(titleText, 40)/2, screenHeight/2 - 150, 40, WHITE);
-
-        // STATYSTYKI: Wciśnięte elegancko nad przyciskami
+        
+        // statystyki
         const char* statsText = TextFormat("Zdobyte pokoje: %d", clearedRoomsCount - 1);
         DrawText(statsText, screenWidth/2 - MeasureText(statsText, 20)/2, screenHeight/2 - 100, 20, WHITE);
         

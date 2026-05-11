@@ -99,6 +99,8 @@ void Game::CheckRoomTransitions() {
                 obstacles.push_back({roomX + margin, roomY + roomHeight - margin - size, size, size});
                 obstacles.push_back({roomX + roomWidth - margin - size, roomY + roomHeight - margin - size, size, size});
                 
+             
+                
                 int enemyCount = GetRandomValue(3, 4);
                 for(int i = 0; i < enemyCount; i++){
                     float ex = GetRandomValue(roomX + margin + size, roomX + roomWidth - margin - size);
@@ -107,8 +109,9 @@ void Game::CheckRoomTransitions() {
                     float speed = GetRandomValue(60, 120); 
                     int hp = GetRandomValue(3, 6); 
 
-                    enemies.push_back({{ex, ey}, speed, 20.0f, type, 2.0f, hp, 0, 0});
+                    enemies.push_back({{ex, ey}, speed, 20.0f, type, 2.0f, hp, 0, 0, 0, 0.0f, 0});
                 }
+            
                 nextRoom.obstacles = obstacles;
                 nextRoom.enemies = enemies;
             }

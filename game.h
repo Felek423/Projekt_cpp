@@ -26,6 +26,12 @@ private:
     int playerDir; // 0 dol, 1 gora, 2 lewo, prawos
     bool flipX; // odbicie lustrzane
 
+    Texture2D enemySprites[5];
+    bool hasEnemySprite[5];
+    Texture2D enemyType3Sprite; 
+    int eType3MaxFrames = 4;          // 4 kolumny
+    float eType3FrameSpeed = 0.15f;   // Szybkość animacji
+
     // funkcje logiczne, na które rozbiliśmy główną pętlę
     void GenerateMap();
     void UpdatePlayerMovement();
