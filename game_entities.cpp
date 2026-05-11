@@ -3,22 +3,33 @@
 
 void Game::UpdatePlayerMovement() {
     Vector2 oldPos = playerPos;
+    isMoving = false; 
 
-    // poruszanie sie gracza wsad i blokowanie na przeszkodach
-    if(IsKeyDown(KEY_W)) playerPos.y -= playerSpeed * GetFrameTime();
-    if(IsKeyDown(KEY_S)) playerPos.y += playerSpeed * GetFrameTime(); 
+    // Oś Y (Góra / Dół) - playerDir 1 to góra, 0 to dół
+    if(IsKeyDown(KEY_W)) { playerPos.y -= playerSpeed * GetFrameTime(); isMoving = true; playerDir = 1; flipX = false; } 
+    if(IsKeyDown(KEY_S)) { playerPos.y += playerSpeed * GetFrameTime(); isMoving = true; playerDir = 0; flipX = false; } 
     for(Rectangle rocks : obstacles){
-        if(CheckCollisionCircleRec(playerPos, playerSize, rocks)){
-            playerPos.y = oldPos.y; 
-        }
+        if(CheckCollisionCircleRec(playerPos, playerSize, rocks)){ playerPos.y = oldPos.y; }
     }
 
-    if(IsKeyDown(KEY_A)) playerPos.x -= playerSpeed * GetFrameTime();
-    if(IsKeyDown(KEY_D)) playerPos.x += playerSpeed * GetFrameTime(); 
+    // Oś X - playerDir 2 to lewo, dla prawego robimy flipX = true
+    if(IsKeyDown(KEY_A)) { playerPos.x -= playerSpeed * GetFrameTime(); isMoving = true; playerDir = 2; flipX = false; } 
+    if(IsKeyDown(KEY_D)) { playerPos.x += playerSpeed * GetFrameTime(); isMoving = true; playerDir = 2; flipX = true; }  
     for(Rectangle rocks : obstacles){
-        if(CheckCollisionCircleRec(playerPos, playerSize, rocks)){
-            playerPos.x = oldPos.x;
+        if(CheckCollisionCircleRec(playerPos, playerSize, rocks)){ playerPos.x = oldPos.x; }
+    }
+
+    // Odmierzanie klatek animacji
+    if (isMoving) {
+        frameTimer += GetFrameTime();
+        if (frameTimer >= frameSpeed) {
+            frameTimer = 0.0f; 
+            currentFrame++;    
+            if (currentFrame >= maxFrames) currentFrame = 0; 
         }
+    } else {
+        currentFrame = 0; 
+        frameTimer = 0.0f;
     }
 
     RoomData& currentRoom = dungeonMap[{currentX, currentY}];

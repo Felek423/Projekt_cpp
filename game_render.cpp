@@ -18,15 +18,30 @@ void Game::DrawRoom() {
     DrawText(TextFormat("ZDOBYTE POKOJE: %d", clearedRoomsCount - 1), roomX + 10, roomY + 10, 20, DARKGREEN);
 }
 
-void Game::DrawEntities() {
-    // rysowanie gracza z efektem niesmiertelnosci
-    Color playerColor = BLUE;
-    if(invincibilityTimer > 0.0f){
-        if((int)(invincibilityTimer * 10) % 2 == 0){
-            playerColor = RED;
-        }  
+   void Game::DrawEntities() {
+    // rysowanie gracza z grafiki
+    Color playerTint = WHITE;
+    if(invincibilityTimer > 0.0f && (int)(invincibilityTimer * 10) % 2 == 0) {
+        playerTint = RED; 
     }
-    DrawCircleV(playerPos, playerSize, playerColor);
+    
+    // Arkusz ma 4 klatki w poziomie i 4 rzędy w pionie
+    float frameWidth = (float)playerSprite.width / 4; 
+    float frameHeight = (float)playerSprite.height / 4; 
+
+    Rectangle sourceRec = {
+        currentFrame * frameWidth,
+        playerDir * frameHeight, 
+        flipX ? -frameWidth : frameWidth, // Ujemna wartość odbija w prawo
+        frameHeight
+    };
+
+    Vector2 destPos = { 
+        playerPos.x - (frameWidth / 2), 
+        playerPos.y - (frameHeight / 2) 
+    };
+
+    DrawTextureRec(playerSprite, sourceRec, destPos, playerTint);
 
     // rysowanie wrogow z kolorami typow strzalow
     for(enemy e : enemies){

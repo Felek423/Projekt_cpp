@@ -13,6 +13,25 @@ Game::Game(int sw, int sh) {
     playerAttackSpeed = 0.6f;
     playerShootTimer = 0.0f;
 
+    // ladowanie grafiki    
+    Image image = LoadImage("mag.png"); 
+
+    
+    playerSprite = LoadTextureFromImage(image); 
+    UnloadImage(image);
+
+    // Ustawienia animacji 4x4
+    maxFrames = 4;           
+    currentFrame = 0;
+    frameTimer = 0.0f;
+    frameSpeed = 0.15f;      
+    isMoving = false;
+    playerDir = 0;           
+    flipX = false;
+
+
+
+
     roomWidth = 1400;
     roomHeight = 900;
     roomX = (screenWidth - roomWidth) / 2.0f;
@@ -63,4 +82,8 @@ void Game::Draw() {
     DrawEntities();
     DrawUI();
     DrawMenus();
+}
+
+Game::~Game() {
+    UnloadTexture(playerSprite);
 }

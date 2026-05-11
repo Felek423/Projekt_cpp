@@ -6,6 +6,7 @@
 class Game {
 public:
     Game(int screenWidth, int screenHeight);
+    ~Game(); //sprzatanie pamieci graficznej
     
     void Update();
     void Draw();
@@ -15,6 +16,16 @@ public:
     bool isVictory;
 
 private:
+
+    Texture2D playerSprite;
+    int currentFrame;
+    int maxFrames;
+    float frameTimer;
+    float frameSpeed;
+    bool isMoving;
+    int playerDir; // 0 dol, 1 gora, 2 lewo, prawos
+    bool flipX; // odbicie lustrzane
+
     // funkcje logiczne, na które rozbiliśmy główną pętlę
     void GenerateMap();
     void UpdatePlayerMovement();
