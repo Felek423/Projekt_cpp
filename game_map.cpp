@@ -89,7 +89,7 @@ void Game::CheckRoomTransitions() {
                 // POKOJ BOSSA 
                 float bx = roomX + roomWidth / 2.0f;
                 float by = roomY + roomHeight / 2.0f;
-                enemies.push_back({{bx, by}, 50.0f, 60.0f, 4, 3.0f, 60, 0, 0});
+                enemies.push_back({{bx, by}, 50.0f, 60.0f, 4, 3.0f, 5, 0, 0}); 
                 nextRoom.enemies = enemies;
             }
             else {

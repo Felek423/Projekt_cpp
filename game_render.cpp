@@ -2,7 +2,15 @@
 #include <cmath>
 
 void Game::DrawRoom() {
-    DrawRectangle(roomX, roomY, roomWidth, roomHeight, GREEN); 
+    // Rysowanie grafiki podłogi na całym obszarze pokoju
+    if (floorSprite.id != 0) {
+        Rectangle sourceRec = { 0.0f, 0.0f, (float)floorSprite.width, (float)floorSprite.height };
+        Rectangle destRec = { roomX, roomY, roomWidth, roomHeight };
+        DrawTexturePro(floorSprite, sourceRec, destRec, {0.0f, 0.0f}, 0.0f, WHITE);
+    } else {
+        DrawRectangle(roomX, roomY, roomWidth, roomHeight, GREEN); 
+    }
+    
     Rectangle roomRect = {roomX, roomY, roomWidth, roomHeight};
     DrawRectangleLinesEx(roomRect, 5, DARKGREEN); 
     
@@ -85,8 +93,23 @@ void Game::DrawEntities() {
 
     // rysowanie przeszkod
     for(Rectangle rocks : obstacles){
-        DrawRectangleRounded(rocks, 0.2f, 10, BLACK);
-        DrawRectangleRoundedLinesEx(rocks, 0.2f, 10, 5.0f, DARKGRAY); 
+        if (rockSprite.id != 0) {
+            Rectangle sourceRec = { 0.0f, 0.0f, (float)rockSprite.width, (float)rockSprite.height };
+            
+            float drawWidth = rocks.width * rockScale.x;
+            float drawHeight = rocks.height * rockScale.y;
+            Rectangle destRec = {
+                rocks.x + (rocks.width - drawWidth) / 2.0f,
+                rocks.y + (rocks.height - drawHeight) / 2.0f,
+                drawWidth,
+                drawHeight
+            };
+            
+            DrawTexturePro(rockSprite, sourceRec, destRec, {0.0f, 0.0f}, 0.0f, WHITE);
+        } else {
+            DrawRectangleRounded(rocks, 0.2f, 10, BLACK);
+            DrawRectangleRoundedLinesEx(rocks, 0.2f, 10, 5.0f, DARKGRAY); 
+        }
     }
 
     // rysowanie pociskow
@@ -133,8 +156,9 @@ void Game::DrawUI() {
     for(enemy e : enemies) {
         if(e.type == 4) {
             int barWidth = 600;
+            float maxBossHp = 5.0f; // Ta wartość musi być taka sama jak HP ustawione w game_map.cpp
             DrawRectangle(screenWidth/2 - barWidth/2, screenHeight - 60, barWidth, 30, DARKGRAY);
-            DrawRectangle(screenWidth/2 - barWidth/2, screenHeight - 60, (e.hp / 60.0f) * barWidth, 30, RED);
+            DrawRectangle(screenWidth/2 - barWidth/2, screenHeight - 60, (e.hp / maxBossHp) * barWidth, 30, RED);
             DrawRectangleLines(screenWidth/2 - barWidth/2, screenHeight - 60, barWidth, 30, BLACK);
             DrawText("BOSS", screenWidth/2 - MeasureText("BOSS", 20)/2, screenHeight - 55, 20, WHITE);
         }

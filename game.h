@@ -26,6 +26,11 @@ private:
     int playerDir; // 0 dol, 1 gora, 2 lewo, prawos
     bool flipX; // odbicie lustrzane
 
+    Texture2D floorSprite;
+
+    Texture2D rockSprite;
+    Vector2 rockScale;
+
     Texture2D enemySprites[5];
     bool hasEnemySprite[5];
     Texture2D enemyType3Sprite; 

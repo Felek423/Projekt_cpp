@@ -20,6 +20,14 @@ Game::Game(int sw, int sh) {
     playerSprite = LoadTextureFromImage(image); 
     UnloadImage(image);
 
+    Image floorImage = LoadImage("podlogaaaa.png");
+    floorSprite = LoadTextureFromImage(floorImage);
+    UnloadImage(floorImage);
+
+    Image rockImage = LoadImage("kamien.png");
+    rockSprite = LoadTextureFromImage(rockImage);
+    UnloadImage(rockImage);
+    rockScale = {4.0f, 2.5f}; // szerokosc / wysokosc skali kamienia
     for(int i = 0; i < 5; i++) {
         hasEnemySprite[i] = false;
     }
@@ -63,7 +71,8 @@ Game::Game(int sw, int sh) {
     obstacles = {
         {roomX + 200, roomY + 150, 100 , 100},
         {roomX + 700, roomY + 300, 100 , 100}, 
-        {roomX + 1000, roomY + 500, 100 , 300}
+        {roomX + 1000, roomY + 500, 100 , 100},
+        {roomX + 1000, roomY + 650, 100 , 100}
     };
 
     enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 20.0f, 3, 2.0f, 5, 0, 0});
@@ -96,6 +105,8 @@ void Game::Draw() {
 
 Game::~Game() {
     UnloadTexture(playerSprite);
+    UnloadTexture(floorSprite);
+    UnloadTexture(rockSprite);
     UnloadTexture(enemyType3Sprite); 
     for(int i = 1; i <= 4; i++){
         if(hasEnemySprite[i]) UnloadTexture(enemySprites[i]);
