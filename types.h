@@ -19,6 +19,9 @@ struct enemy{
     int hp;
     int burstBulletsLeft = 0;
     int burstInterval = 0.0f;
+    int currentFrame;      // Która klatka w rzędzie (0-3)
+    float frameTimer;      // Stoper klatek
+    int directionRow;      // Który rząd (0=dół, 1=góra, 2=lewo, 3=prawo)
 };
 
 struct pickup {

@@ -9,14 +9,16 @@ void Game::UpdatePlayerMovement() {
     if(IsKeyDown(KEY_W)) { playerPos.y -= playerSpeed * GetFrameTime(); isMoving = true; playerDir = 1; flipX = false; } 
     if(IsKeyDown(KEY_S)) { playerPos.y += playerSpeed * GetFrameTime(); isMoving = true; playerDir = 0; flipX = false; } 
     for(Rectangle rocks : obstacles){
-        if(CheckCollisionCircleRec(playerPos, playerSize, rocks)){ playerPos.y = oldPos.y; }
+        Rectangle playerRec = { playerPos.x - playerSize.x, playerPos.y - playerSize.y, playerSize.x * 2.0f, playerSize.y * 2.0f };
+        if(CheckCollisionRecs(playerRec, rocks)){ playerPos.y = oldPos.y; }
     }
 
     // Oś X - playerDir 2 to lewo, dla prawego robimy flipX = true
     if(IsKeyDown(KEY_A)) { playerPos.x -= playerSpeed * GetFrameTime(); isMoving = true; playerDir = 2; flipX = false; } 
     if(IsKeyDown(KEY_D)) { playerPos.x += playerSpeed * GetFrameTime(); isMoving = true; playerDir = 2; flipX = true; }  
     for(Rectangle rocks : obstacles){
-        if(CheckCollisionCircleRec(playerPos, playerSize, rocks)){ playerPos.x = oldPos.x; }
+        Rectangle playerRec = { playerPos.x - playerSize.x, playerPos.y - playerSize.y, playerSize.x * 2.0f, playerSize.y * 2.0f };
+        if(CheckCollisionRecs(playerRec, rocks)){ playerPos.x = oldPos.x; }
     }
 
     // Odmierzanie klatek animacji
@@ -34,16 +36,16 @@ void Game::UpdatePlayerMovement() {
 
     RoomData& currentRoom = dungeonMap[{currentX, currentY}];
     // ograniczenie ruchu gracza i sprawdzanie wyjsc
-    float minX = roomX + playerSize;
-    float maxX = roomX + roomWidth - playerSize;
-    float minY = roomY + playerSize;
-    float maxY = roomY + roomHeight - playerSize;
+    float minX = roomX + playerSize.x;
+    float maxX = roomX + roomWidth - playerSize.x;
+    float minY = roomY + playerSize.y;
+    float maxY = roomY + roomHeight - playerSize.y;
 
     if (enemies.empty()) {
-        if (currentRoom.hasLeft && playerPos.y > leftDoor.y && playerPos.y < leftDoor.y + leftDoor.height) minX = roomX - playerSize;
-        if (currentRoom.hasRight && playerPos.y > rightDoor.y && playerPos.y < rightDoor.y + rightDoor.height) maxX = roomX + roomWidth + playerSize;
-        if (currentRoom.hasTop && playerPos.x > topDoor.x && playerPos.x < topDoor.x + topDoor.width) minY = roomY - playerSize;
-        if (currentRoom.hasBottom && playerPos.x > bottomDoor.x && playerPos.x < bottomDoor.x + bottomDoor.width) maxY = roomY + roomHeight + playerSize;
+        if (currentRoom.hasLeft && playerPos.y > leftDoor.y && playerPos.y < leftDoor.y + leftDoor.height) minX = roomX - playerSize.x;
+        if (currentRoom.hasRight && playerPos.y > rightDoor.y && playerPos.y < rightDoor.y + rightDoor.height) maxX = roomX + roomWidth + playerSize.x;
+        if (currentRoom.hasTop && playerPos.x > topDoor.x && playerPos.x < topDoor.x + topDoor.width) minY = roomY - playerSize.y;
+        if (currentRoom.hasBottom && playerPos.x > bottomDoor.x && playerPos.x < bottomDoor.x + bottomDoor.width) maxY = roomY + roomHeight + playerSize.y;
     }
 
     if (playerPos.x < minX) playerPos.x = minX;
@@ -55,7 +57,8 @@ void Game::UpdatePlayerMovement() {
 void Game::UpdatePickups() {
     // logika zbierania przedmiotow 
     for(int i = pickups.size() - 1; i >= 0; i--){
-        if(CheckCollisionCircles(playerPos, playerSize, pickups[i].position, 15.0f)){
+        Rectangle playerRec = { playerPos.x - playerSize.x, playerPos.y - playerSize.y, playerSize.x * 2.0f, playerSize.y * 2.0f };
+        if(CheckCollisionCircleRec(pickups[i].position, 15.0f, playerRec)){
             if (pickups[i].type == 1 && playerHp < 6){
                 playerHp += 1;
                 pickups.erase(pickups.begin() + i);
@@ -91,7 +94,7 @@ void Game::UpdateEnemies() {
         float dy = playerPos.y - enemies[i].position.y;
         float length = sqrt(dx*dx + dy*dy);
         
-        // --- NOWE: Uniwersalna animacja i ustalanie kierunku ---
+        //Uniwersalna animacja i ustalanie kierunku 
         if (fabsf(dx) > fabsf(dy)) {
             enemies[i].directionRow = (dx > 0) ? 3 : 2; // Prawo : Lewo
         } else {
@@ -112,7 +115,8 @@ void Game::UpdateEnemies() {
 
         // obrażenia od kontaktu z przeciwnikiem
         if (invincibilityTimer <= 0.0f) {
-            if (length <= (playerSize + enemies[i].size)) {
+            Rectangle playerRec = { playerPos.x - playerSize.x, playerPos.y - playerSize.y, playerSize.x * 2.0f, playerSize.y * 2.0f };
+            if (CheckCollisionCircleRec(enemies[i].position, enemies[i].size, playerRec)) {
                 playerHp -= 1;
                 invincibilityTimer = 1.0f; 
                 if (playerHp <= 0) {
@@ -164,10 +168,19 @@ void Game::UpdateEnemies() {
             }
         }
 
-        // Zwykły ruch w stronę gracza (Typ 4 - Boss stoi w miejscu)
+        // ruch w strone gracza
+        float moveSpeed = enemies[i].speed;
+        float stopDistance = fmaxf(playerSize.x, playerSize.y) + enemies[i].size; // Zwykli wrogowie podchodzą pod samego gracza
+
+        // Modyfikacja dla Bossa (Typ 4)
+        if (enemies[i].type == 4) {
+            moveSpeed = enemies[i].speed * 0.3f; // Boss idzie bardzo powoli 
+            stopDistance = 250.0f;               // Boss trzyma dystans 250 pikseli od gracza
+        }
+
         float oldEnemyX = enemies[i].position.x;
-        if (enemies[i].type != 4 && length > playerSize + enemies[i].size) {
-            enemies[i].position.x += dx * enemies[i].speed * GetFrameTime();
+        if (length > stopDistance) {
+            enemies[i].position.x += dx * moveSpeed * GetFrameTime();
         }               
         for(Rectangle rocks : obstacles){
             if(CheckCollisionCircleRec(enemies[i].position, enemies[i].size, rocks)){
@@ -176,8 +189,8 @@ void Game::UpdateEnemies() {
         }
 
         float oldEnemyY = enemies[i].position.y;
-        if (enemies[i].type != 4 && length > playerSize + enemies[i].size) {
-            enemies[i].position.y += dy * enemies[i].speed * GetFrameTime();
+        if (length > stopDistance) {
+            enemies[i].position.y += dy * moveSpeed * GetFrameTime();
         }
             
         for(Rectangle rocks : obstacles){
@@ -185,6 +198,7 @@ void Game::UpdateEnemies() {
                 enemies[i].position.y = oldEnemyY;
             }   
         }
+        
 
         // odpychanie sie wrogow od siebie
         for(int j = 0; j < enemies.size(); j++) {
@@ -280,7 +294,8 @@ void Game::UpdateBullets() {
         if(!hitSomething) {
             if (bullets[i].isEnemy) {
                 if(invincibilityTimer <= 0.0f){
-                    if (CheckCollisionCircles(bullets[i].position, bulletSize, playerPos, playerSize)) {
+                    Rectangle playerRec = { playerPos.x - playerSize.x, playerPos.y - playerSize.y, playerSize.x * 2.0f, playerSize.y * 2.0f };
+                    if (CheckCollisionCircleRec(bullets[i].position, bulletSize, playerRec)) {
                         hitSomething = true;
                         playerHp -= 1;  
                         invincibilityTimer = 1.0f;

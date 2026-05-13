@@ -46,7 +46,7 @@ void Game::DrawEntities() {
     for(enemy e : enemies){
         // Sprawdzamy, czy dla tego typu wroga mamy już załadowaną grafikę
         if(hasEnemySprite[e.type]) {
-            // Rysujemy grafikę z arkusza!
+            // Rysujemy grafikę z arkusza
             float eFrameWidth = (float)enemySprites[e.type].width / 4; 
             float eFrameHeight = (float)enemySprites[e.type].height / 4; 
 
@@ -121,7 +121,7 @@ void Game::DrawUI() {
             Color c = DARKGRAY;
             if (coords.first == currentX && coords.second == currentY) c = GREEN;
             else if (room.type == 1) c = GOLD;
-            else if (room.type == 3) c = RED; // NOWE: arene bossa widac z daleka na czerwono
+            else if (room.type == 3) c = RED; // arene bossa widac na mapie na czerwono
             else if (room.cleared) c = LIGHTGRAY;
             DrawRectangle(screenWidth - 110 + (coords.first - currentX) * 15, 
                           110 + (coords.second - currentY) * 15, 

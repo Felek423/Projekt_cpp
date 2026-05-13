@@ -7,7 +7,7 @@ Game::Game(int sw, int sh) {
 
     playerPos = {400, 300};
     playerSpeed = 200.0f;
-    playerSize = 30.0f;
+    playerSize = {30.0f, 50.0f}; // szerokosc / wysokosc gracza
     playerHp = 6;
     invincibilityTimer = 0.0f;
     playerAttackSpeed = 0.6f;

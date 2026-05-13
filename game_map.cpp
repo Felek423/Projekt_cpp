@@ -39,7 +39,7 @@ void Game::GenerateMap() {
         }
     }
     
-    // ZAPISANIE BOSSA NA MAPIE
+    // zapisanie bossa na mapie
     dungeonMap[{bossX, bossY}].type = 3;
 }
 
@@ -57,17 +57,18 @@ void Game::CheckRoomTransitions() {
             }
         }
 
-        if (currentRoom.hasRight && CheckCollisionCircleRec(playerPos, playerSize, rightDoor) && playerPos.x > rightDoor.x + 20) {
-            currentRoom.pickups = pickups; currentRoom.enemies = enemies; currentX += 1; playerPos.x = roomX + playerSize + 20; changedRoom = true;
+        Rectangle playerRec = { playerPos.x - playerSize.x, playerPos.y - playerSize.y, playerSize.x * 2.0f, playerSize.y * 2.0f };
+        if (currentRoom.hasRight && CheckCollisionRecs(playerRec, rightDoor) && playerPos.x > rightDoor.x + 20) {
+            currentRoom.pickups = pickups; currentRoom.enemies = enemies; currentX += 1; playerPos.x = roomX + playerSize.x + 20; changedRoom = true;
         }
-        else if (currentRoom.hasLeft && CheckCollisionCircleRec(playerPos, playerSize, leftDoor) && playerPos.x < leftDoor.x + leftDoor.width - 20) {
-            currentRoom.pickups = pickups; currentRoom.enemies = enemies; currentX -= 1; playerPos.x = roomX + roomWidth - playerSize - 20; changedRoom = true;
+        else if (currentRoom.hasLeft && CheckCollisionRecs(playerRec, leftDoor) && playerPos.x < leftDoor.x + leftDoor.width - 20) {
+            currentRoom.pickups = pickups; currentRoom.enemies = enemies; currentX -= 1; playerPos.x = roomX + roomWidth - playerSize.x - 20; changedRoom = true;
         }
-        else if (currentRoom.hasTop && CheckCollisionCircleRec(playerPos, playerSize, topDoor) && playerPos.y < topDoor.y + topDoor.height - 20) {
-            currentRoom.pickups = pickups; currentRoom.enemies = enemies; currentY -= 1; playerPos.y = roomY + roomHeight - playerSize - 20; changedRoom = true;
+        else if (currentRoom.hasTop && CheckCollisionRecs(playerRec, topDoor) && playerPos.y < topDoor.y + topDoor.height - 20) {
+            currentRoom.pickups = pickups; currentRoom.enemies = enemies; currentY -= 1; playerPos.y = roomY + roomHeight - playerSize.y - 20; changedRoom = true;
         }
-        else if (currentRoom.hasBottom && CheckCollisionCircleRec(playerPos, playerSize, bottomDoor) && playerPos.y > bottomDoor.y + 20) {
-            currentRoom.pickups = pickups; currentRoom.enemies = enemies; currentY += 1; playerPos.y = roomY + playerSize + 20; changedRoom = true;
+        else if (currentRoom.hasBottom && CheckCollisionRecs(playerRec, bottomDoor) && playerPos.y > bottomDoor.y + 20) {
+            currentRoom.pickups = pickups; currentRoom.enemies = enemies; currentY += 1; playerPos.y = roomY + playerSize.y + 20; changedRoom = true;
         }
     } 
 

@@ -32,7 +32,7 @@ private:
     int eType3MaxFrames = 4;          // 4 kolumny
     float eType3FrameSpeed = 0.15f;   // Szybkość animacji
 
-    // funkcje logiczne, na które rozbiliśmy główną pętlę
+    // funkcje logiczne, ktore zostaly rozbite na glowna petle
     void GenerateMap();
     void UpdatePlayerMovement();
     void CheckRoomTransitions();
@@ -50,7 +50,7 @@ private:
     // gracz
     Vector2 playerPos;
     float playerSpeed;
-    float playerSize;
+    Vector2 playerSize;
     int playerHp;
     float invincibilityTimer;
     float playerAttackSpeed;
