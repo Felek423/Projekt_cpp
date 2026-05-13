@@ -104,7 +104,6 @@ void Game::UpdateEnemies() {
             enemies[i].currentFrame++;    
             if (enemies[i].currentFrame >= 4) enemies[i].currentFrame = 0; 
         }
-        // -------------------------------------------------------
 
         if(length > 0) {
             dx = dx / length;

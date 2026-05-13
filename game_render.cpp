@@ -43,7 +43,6 @@ void Game::DrawEntities() {
     
     DrawTextureRec(playerSprite, sourceRec, destPos, playerTint);
 
-    // --- NOWE: inteligentne rysowanie wrogow z fallbackiem (zapasowym kółkiem) ---
     for(enemy e : enemies){
         // Sprawdzamy, czy dla tego typu wroga mamy już załadowaną grafikę
         if(hasEnemySprite[e.type]) {
@@ -57,13 +56,22 @@ void Game::DrawEntities() {
                 eFrameWidth,
                 eFrameHeight
             };
+            
+            float scale = 1.8f; //skala 
 
-            Vector2 eDestPos = { 
-                e.position.x - (eFrameWidth / 2), 
-                e.position.y - (eFrameHeight / 2) 
+            Rectangle eDestRec = {
+                e.position.x,
+                e.position.y,
+                eFrameWidth * scale,
+                eFrameHeight * scale
             };
 
-            DrawTextureRec(enemySprites[e.type], eSourceRec, eDestPos, WHITE);
+            // Środek rysowania (wyśrodkowanie na powiększonym hitboxie)
+            Vector2 origin = { (eFrameWidth * scale) / 2, (eFrameHeight * scale) / 2 };
+
+            // DrawTexturePro pozwala na płynne powiększanie
+            DrawTexturePro(enemySprites[e.type], eSourceRec, eDestRec, origin, 0.0f, WHITE);
+
         } else {
             // Jeśli nie ma grafiki, rysujemy stare kolorowe kółko
             Color enemyColor = PURPLE;
