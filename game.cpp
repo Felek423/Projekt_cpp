@@ -57,6 +57,12 @@ Game::Game(int sw, int sh) {
     hasEnemySprite[2] = true; // Zaznaczamy, że typ 2 ma grafikę
     UnloadImage(imageT2);
 
+    //wrog typ 1 (strzelający w 4 strony świata)
+    Image imageT1 = LoadImage("enemy1.png"); 
+    enemySprites[1] = LoadTextureFromImage(imageT1); 
+    hasEnemySprite[1] = true; // Zaznaczamy, że typ 1 ma grafikę
+    UnloadImage(imageT1);
+
     // Ustawienia animacji 4x4
     maxFrames = 4;           
     currentFrame = 0;
@@ -95,9 +101,8 @@ Game::Game(int sw, int sh) {
     };
 
     enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 50.0f, 3, 2.0f, 5, 0, 0});
-    enemies.push_back({{roomX + 400, roomY + 400}, 100.0f, 50.0f, 2, 2.0f, 5, 0, 0}); // Przeciwnik typu 2 do testów
-
-    GenerateMap();
+    enemies.push_back({{roomX + 400, roomY + 400}, 100.0f, 50.0f, 2, 2.0f, 5, 0, 0}); // Przeciwnik typu 2 
+    enemies.push_back({{roomX + 1100, roomY + 300}, 120.0f, 50.0f, 1, 2.0f, 5, 0, 0}); // Przeciwnik typu 1 
     dungeonMap[{0, 0}].obstacles = obstacles;
     dungeonMap[{0, 0}].enemies = enemies;
 }
