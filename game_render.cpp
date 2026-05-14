@@ -27,6 +27,27 @@ void Game::DrawRoom() {
 }
 
 void Game::DrawEntities() {
+    // rysowanie przeszkod
+    for(Rectangle rocks : obstacles){
+        if (rockSprite.id != 0) {
+            Rectangle sourceRec = { 0.0f, 0.0f, (float)rockSprite.width, (float)rockSprite.height };
+            
+            float drawWidth = rocks.width * rockScale.x;
+            float drawHeight = rocks.height * rockScale.y;
+            Rectangle destRec = {
+                rocks.x + (rocks.width - drawWidth) / 2.0f,
+                rocks.y + (rocks.height - drawHeight) / 2.0f,
+                drawWidth,
+                drawHeight
+            };
+            
+            DrawTexturePro(rockSprite, sourceRec, destRec, {0.0f, 0.0f}, 0.0f, WHITE);
+        } else {
+            DrawRectangleRounded(rocks, 0.2f, 10, BLACK);
+            DrawRectangleRoundedLinesEx(rocks, 0.2f, 10, 5.0f, DARKGRAY); 
+        }
+    }
+
     // rysowanie gracza z grafiki
     Color playerTint = WHITE;
     if(invincibilityTimer > 0.0f && (int)(invincibilityTimer * 10) % 2 == 0) {
@@ -91,40 +112,41 @@ void Game::DrawEntities() {
         }
     }
 
-    // rysowanie przeszkod
-    for(Rectangle rocks : obstacles){
-        if (rockSprite.id != 0) {
-            Rectangle sourceRec = { 0.0f, 0.0f, (float)rockSprite.width, (float)rockSprite.height };
-            
-            float drawWidth = rocks.width * rockScale.x;
-            float drawHeight = rocks.height * rockScale.y;
-            Rectangle destRec = {
-                rocks.x + (rocks.width - drawWidth) / 2.0f,
-                rocks.y + (rocks.height - drawHeight) / 2.0f,
-                drawWidth,
-                drawHeight
-            };
-            
-            DrawTexturePro(rockSprite, sourceRec, destRec, {0.0f, 0.0f}, 0.0f, WHITE);
-        } else {
-            DrawRectangleRounded(rocks, 0.2f, 10, BLACK);
-            DrawRectangleRoundedLinesEx(rocks, 0.2f, 10, 5.0f, DARKGRAY); 
-        }
-    }
-
     // rysowanie pociskow
     for(bullet b: bullets){
-        if (b.isEnemy) DrawCircleV(b.position, bulletSize, YELLOW);
-        else DrawCircleV(b.position, bulletSize, RED);
+        Texture2D tex = b.isEnemy ? enemyBulletSprite : playerBulletSprite;
+        if (tex.id != 0) {
+            // Obliczamy kąt (w stopniach) na podstawie wektora kierunku
+            float angle = atan2(b.direction.y, b.direction.x) * (180.0f / 3.14159f);
+            
+            float width = tex.width * bulletScale;
+            float height = tex.height * bulletScale;
+            Rectangle sourceRec = { 0.0f, 0.0f, (float)tex.width, (float)tex.height };
+            Rectangle destRec = { b.position.x, b.position.y, width, height };
+            DrawTexturePro(tex, sourceRec, destRec, {width / 2.0f, height / 2.0f}, angle, WHITE);
+        } else {
+            if (b.isEnemy) DrawCircleV(b.position, bulletSize, YELLOW);
+            else DrawCircleV(b.position, bulletSize, RED);
+        }
     }
 
     // rysowanie pickupow na ziemi  
     for(pickup p : pickups){
         if (p.type == 1) {
-            float pulse = sin(GetTime() * 5.0f) * 2.0f;
-            DrawCircleV(p.position, 12.0f + pulse, RED);
-            DrawCircleV({p.position.x - 6, p.position.y - 4}, 6.0f + pulse/2, RED);
-            DrawCircleV({p.position.x + 6, p.position.y - 4}, 6.0f + pulse/2, RED);
+            if (heartSprite.id != 0) {
+                float pulse = sin(GetTime() * 5.0f) * 0.2f;
+                float scale = pickupHeartScale + pulse;
+                float width = heartSprite.width * scale;
+                float height = heartSprite.height * scale;
+                Rectangle sourceRec = { 0.0f, 0.0f, (float)heartSprite.width, (float)heartSprite.height };
+                Rectangle destRec = { p.position.x - width/2, p.position.y - height/2, width, height };
+                DrawTexturePro(heartSprite, sourceRec, destRec, {0, 0}, 0.0f, WHITE);
+            } else {
+                float pulse = sin(GetTime() * 5.0f) * 2.0f;
+                DrawCircleV(p.position, 12.0f + pulse, RED);
+                DrawCircleV({p.position.x - 6, p.position.y - 4}, 6.0f + pulse/2, RED);
+                DrawCircleV({p.position.x + 6, p.position.y - 4}, 6.0f + pulse/2, RED);
+            }
         }
         else if (p.type == 2) {
             float hover = sin(GetTime() * 4.0f) * 5.0f;
@@ -167,14 +189,37 @@ void Game::DrawUI() {
     // rysowanie hp gracza (puste / polpelne / pelne serca)
     int maxHearts = 3;
     for (int i = 0; i < maxHearts; i++){
-        int hx = 50 + i * 60;
+        float hx = 50 + i * (heartSprite.id != 0 ? heartSprite.width * uiHeartScale + 10 : 60);
         int hy = 50;
-        if(playerHp >= (i*2) + 2) DrawRectangle(hx, hy, 40, 40, RED);
-        else if (playerHp >= (i*2) + 1){
-            DrawRectangle(hx, hy, 20, 40, RED);
-            DrawRectangleLines(hx, hy, 40, 40, RED); 
+        
+        if (heartSprite.id != 0) {
+            float width = heartSprite.width * uiHeartScale;
+            float height = heartSprite.height * uiHeartScale;
+            
+            if (playerHp >= (i * 2) + 2) {
+                // Pełne serce
+                Rectangle sourceRec = { 0.0f, 0.0f, (float)heartSprite.width, (float)heartSprite.height };
+                Rectangle destRec = { hx, (float)hy, width, height };
+                DrawTexturePro(heartSprite, sourceRec, destRec, {0, 0}, 0.0f, WHITE);
+            } else if (playerHp >= (i * 2) + 1) {
+                // Pół serca (rysujemy tylko lewą połowę obrazka)
+                Rectangle sourceRec = { 0.0f, 0.0f, heartSprite.width / 2.0f, (float)heartSprite.height };
+                Rectangle destRec = { hx, (float)hy, width / 2.0f, height };
+                DrawTexturePro(heartSprite, sourceRec, destRec, {0, 0}, 0.0f, WHITE);
+            } else {
+                // Puste serce (przyciemnione z przezroczystością)
+                Rectangle sourceRec = { 0.0f, 0.0f, (float)heartSprite.width, (float)heartSprite.height };
+                Rectangle destRec = { hx, (float)hy, width, height };
+                DrawTexturePro(heartSprite, sourceRec, destRec, {0, 0}, 0.0f, Fade(BLACK, 0.3f));
+            }
+        } else {
+            if(playerHp >= (i*2) + 2) DrawRectangle(hx, hy, 40, 40, RED);
+            else if (playerHp >= (i*2) + 1){
+                DrawRectangle(hx, hy, 20, 40, RED);
+                DrawRectangleLines(hx, hy, 40, 40, RED); 
+            }
+            else DrawRectangleLines(hx, hy, 40, 40, RED);
         }
-        else DrawRectangleLines(hx, hy, 40, 40, RED);
     }
 }
 
@@ -238,7 +283,7 @@ void Game::DrawMenus() {
                 bullets.clear();
                 pickups.clear();
                 enemies.clear();
-                enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 20.0f, 1, 2.0f, 5, 0, 0});
+                enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 50.0f, 1, 2.0f, 5, 0, 0});
                 obstacles = {
                     {roomX + 200, roomY + 150, 100 , 100},
                     {roomX + 700, roomY + 300, 100 , 100}, 

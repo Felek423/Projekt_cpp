@@ -101,8 +101,9 @@ void Game::UpdateEnemies() {
             enemies[i].directionRow = (dy > 0) ? 0 : 1; // Dół : Góra
         }
 
+        float currentFrameSpeed = (enemies[i].type == 2) ? 0.30f : 0.15f; // spowolnienie dla typu 2
         enemies[i].frameTimer += GetFrameTime();
-        if (enemies[i].frameTimer >= 0.15f) { 
+        if (enemies[i].frameTimer >= currentFrameSpeed) { 
             enemies[i].frameTimer = 0.0f; 
             enemies[i].currentFrame++;    
             if (enemies[i].currentFrame >= 4) enemies[i].currentFrame = 0; 

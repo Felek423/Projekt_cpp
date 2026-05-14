@@ -24,10 +24,23 @@ Game::Game(int sw, int sh) {
     floorSprite = LoadTextureFromImage(floorImage);
     UnloadImage(floorImage);
 
+    Image heartImage = LoadImage("serce.png");
+    heartSprite = LoadTextureFromImage(heartImage);
+    UnloadImage(heartImage);
+    uiHeartScale = 3.5f;     // skala serc w pasku zdrowia gracza
+    pickupHeartScale = 4.0f; // bazowa skala serc leżących na mapie
+
     Image rockImage = LoadImage("kamien.png");
     rockSprite = LoadTextureFromImage(rockImage);
     UnloadImage(rockImage);
     rockScale = {4.0f, 2.5f}; // szerokosc / wysokosc skali kamienia
+
+    Image pBulletImage = LoadImage("pocisk.png");
+    playerBulletSprite = LoadTextureFromImage(pBulletImage);
+    UnloadImage(pBulletImage);
+    enemyBulletSprite = {0}; // na razie brak grafiki dla pocisków wroga
+    bulletScale = 0.4f; // skala wielkości grafiki pocisków
+
     for(int i = 0; i < 5; i++) {
         hasEnemySprite[i] = false;
     }
@@ -37,6 +50,12 @@ Game::Game(int sw, int sh) {
     enemySprites[3] = LoadTextureFromImage(imageT3); 
     hasEnemySprite[3] = true; // Zaznaczamy, że typ 3 ma grafikę
     UnloadImage(imageT3);
+
+    //wrog typ 2
+    Image imageT2 = LoadImage("enemy2.png"); 
+    enemySprites[2] = LoadTextureFromImage(imageT2); 
+    hasEnemySprite[2] = true; // Zaznaczamy, że typ 2 ma grafikę
+    UnloadImage(imageT2);
 
     // Ustawienia animacji 4x4
     maxFrames = 4;           
@@ -75,7 +94,8 @@ Game::Game(int sw, int sh) {
         {roomX + 1000, roomY + 650, 100 , 100}
     };
 
-    enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 20.0f, 3, 2.0f, 5, 0, 0});
+    enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 50.0f, 3, 2.0f, 5, 0, 0});
+    enemies.push_back({{roomX + 400, roomY + 400}, 100.0f, 50.0f, 2, 2.0f, 5, 0, 0}); // Przeciwnik typu 2 do testów
 
     GenerateMap();
     dungeonMap[{0, 0}].obstacles = obstacles;
@@ -106,7 +126,10 @@ void Game::Draw() {
 Game::~Game() {
     UnloadTexture(playerSprite);
     UnloadTexture(floorSprite);
+    UnloadTexture(heartSprite);
     UnloadTexture(rockSprite);
+    UnloadTexture(playerBulletSprite);
+    if (enemyBulletSprite.id != 0) UnloadTexture(enemyBulletSprite);
     UnloadTexture(enemyType3Sprite); 
     for(int i = 1; i <= 4; i++){
         if(hasEnemySprite[i]) UnloadTexture(enemySprites[i]);

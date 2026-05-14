@@ -27,9 +27,16 @@ private:
     bool flipX; // odbicie lustrzane
 
     Texture2D floorSprite;
+    Texture2D heartSprite;
+    float uiHeartScale;
+    float pickupHeartScale;
 
     Texture2D rockSprite;
     Vector2 rockScale;
+
+    Texture2D playerBulletSprite;
+    Texture2D enemyBulletSprite;
+    float bulletScale;
 
     Texture2D enemySprites[5];
     bool hasEnemySprite[5];

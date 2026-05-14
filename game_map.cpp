@@ -110,7 +110,7 @@ void Game::CheckRoomTransitions() {
                     float speed = GetRandomValue(60, 120); 
                     int hp = GetRandomValue(3, 6); 
 
-                    enemies.push_back({{ex, ey}, speed, 35.0f, type, 2.0f, hp, 0, 0, 0, 0.0f, 0});
+                    enemies.push_back({{ex, ey}, speed, 50.0f, type, 2.0f, hp, 0, 0, 0, 0.0f, 0});
                 }
             
                 nextRoom.obstacles = obstacles;
