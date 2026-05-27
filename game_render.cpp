@@ -119,6 +119,10 @@ void Game::DrawEntities() {
             // Obliczamy kąt (w stopniach) na podstawie wektora kierunku
             float angle = atan2(b.direction.y, b.direction.x) * (180.0f / 3.14159f);
             
+            // Jeśli grafika pocisku wroga jest domyślnie skierowana w górę, dodajemy 90 stopni, 
+            // ponieważ 0 stopni w matematyce oznacza kierunek w prawo.
+            if (b.isEnemy) angle += 90.0f;
+            
             float width = tex.width * bulletScale;
             float height = tex.height * bulletScale;
             Rectangle sourceRec = { 0.0f, 0.0f, (float)tex.width, (float)tex.height };

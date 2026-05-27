@@ -141,7 +141,7 @@ void Game::UpdateEnemies() {
             enemies[i].position.y += dy * moveSpeed * GetFrameTime();
         }
 
-        // plynne omijanie przeszkod i wypychanie z kolizji (zaokraglone rogi hitboxow)
+        // zaokraglone rogi hitboxow
         for(Rectangle rocks : obstacles) {
             // wektor odpychania od srodka przeszkody 
             float rockCenterX = rocks.x + rocks.width / 2.0f;

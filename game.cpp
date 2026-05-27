@@ -43,7 +43,9 @@ Game::Game(int sw, int sh) {
     Image pBulletImage = LoadImage("pocisk.png");
     playerBulletSprite = LoadTextureFromImage(pBulletImage);
     UnloadImage(pBulletImage);
-    enemyBulletSprite = {0}; // na razie brak grafiki dla pocisków wroga
+    Image eBulletImage = LoadImage("pocisk_wrog.png");
+    enemyBulletSprite = LoadTextureFromImage(eBulletImage);
+    UnloadImage(eBulletImage);
     bulletScale = 0.4f; // skala wielkości grafiki pocisków
 
     for(int i = 0; i < 5; i++) {
@@ -59,19 +61,19 @@ Game::Game(int sw, int sh) {
     //wrog typ 2
     Image imageT2 = LoadImage("enemy2.png"); 
     enemySprites[2] = LoadTextureFromImage(imageT2); 
-    hasEnemySprite[2] = true; // Zaznaczamy, że typ 2 ma grafikę
+    hasEnemySprite[2] = true; 
     UnloadImage(imageT2);
 
     //wrog typ 1 (strzelający w 4 strony świata)
     Image imageT1 = LoadImage("enemy1.png"); 
     enemySprites[1] = LoadTextureFromImage(imageT1); 
-    hasEnemySprite[1] = true; // Zaznaczamy, że typ 1 ma grafikę
+    hasEnemySprite[1] = true; 
     UnloadImage(imageT1);
 
     //wrog typ 4 (boss)
     Image imageT4 = LoadImage("boss.png"); 
     enemySprites[4] = LoadTextureFromImage(imageT4); 
-    hasEnemySprite[4] = true; // Zaznaczamy, że boss ma grafikę
+    hasEnemySprite[4] = true; 
     UnloadImage(imageT4);
 
     // Ustawienia animacji 4x4
