@@ -126,78 +126,69 @@ void Game::UpdateEnemies() {
             }
         }
 
-        // omijanie przeszkod
-        for(Rectangle rocks : obstacles) {
-            float closestX = fmaxf(rocks.x, fminf(enemies[i].position.x, rocks.x + rocks.width));
-            float closestY = fmaxf(rocks.y, fminf(enemies[i].position.y, rocks.y + rocks.height));
-            float diffX = enemies[i].position.x - closestX;
-            float diffY = enemies[i].position.y - closestY;
-            float distance = sqrt(diffX * diffX + diffY * diffY);
-            float buffer = 50.0f;
-            if (distance < buffer) {
-                if (distance == 0) { enemies[i].position.y -= 1; continue; }
-                float dirX = diffX / distance;
-                float dirY = diffY / distance;
-                float pushForce = (buffer - distance) * 5.0f;
-                enemies[i].position.x += dirX * pushForce * GetFrameTime();
-                enemies[i].position.y += dirY * pushForce * GetFrameTime();
-                float dotProduct = dx * (-dirX) + dy * (-dirY);
-                if (dotProduct > 0.3f) { 
-                    float slideX = -dirY;
-                    float slideY = dirX;
-                    if (slideX * dx + slideY * dy < 0) {
-                        slideX = -slideX;
-                        slideY = -slideY;
-                    }
-
-                    float rockCenterX = rocks.x + rocks.width / 2.0f;
-                    float rockCenterY = rocks.y + rocks.height / 2.0f;
-                    float toPlayerX = playerPos.x - rockCenterX;
-                    float toPlayerY = playerPos.y - rockCenterY;
-                    toPlayerX += 0.1f;
-                    toPlayerY += 0.1f;
-
-                    if (slideX * toPlayerX + slideY * toPlayerY < 0) {
-                        slideX = -slideX;
-                        slideY = -slideY;
-                    }
-
-                    float slideSpeed = enemies[i].speed;
-                    enemies[i].position.x += slideX * slideSpeed * GetFrameTime();
-                    enemies[i].position.y += slideY * slideSpeed * GetFrameTime();
-                }
-            }
-        }
-
         // ruch w strone gracza
         float moveSpeed = enemies[i].speed;
         float stopDistance = fmaxf(playerSize.x, playerSize.y) + enemies[i].size; // Zwykli wrogowie podchodzą pod samego gracza
 
         // Modyfikacja dla Bossa (Typ 4)
         if (enemies[i].type == 4) {
-            moveSpeed = enemies[i].speed * 0.3f; // Boss idzie bardzo powoli 
-            stopDistance = 250.0f;               // Boss trzyma dystans 250 pikseli od gracza
+            moveSpeed = enemies[i].speed * 0.5f; // predkosc bossa
+            stopDistance = 200.0f;               // Boss trzyma dystans 200 pikseli od gracza
         }
 
-        float oldEnemyX = enemies[i].position.x;
         if (length > stopDistance) {
             enemies[i].position.x += dx * moveSpeed * GetFrameTime();
-        }               
-        for(Rectangle rocks : obstacles){
-            if(CheckCollisionCircleRec(enemies[i].position, enemies[i].size, rocks)){
-                enemies[i].position.x = oldEnemyX;
-            }
-        }
-
-        float oldEnemyY = enemies[i].position.y;
-        if (length > stopDistance) {
             enemies[i].position.y += dy * moveSpeed * GetFrameTime();
         }
+
+        // plynne omijanie przeszkod i wypychanie z kolizji (zaokraglone rogi hitboxow)
+        for(Rectangle rocks : obstacles) {
+            // wektor odpychania od srodka przeszkody 
+            float rockCenterX = rocks.x + rocks.width / 2.0f;
+            float rockCenterY = rocks.y + rocks.height / 2.0f;
+            float fromCenterX = enemies[i].position.x - rockCenterX;
+            float fromCenterY = enemies[i].position.y - rockCenterY;
+            float distFromCenter = sqrt(fromCenterX * fromCenterX + fromCenterY * fromCenterY);
             
-        for(Rectangle rocks : obstacles){
-            if(CheckCollisionCircleRec(enemies[i].position, enemies[i].size, rocks)){
-                enemies[i].position.y = oldEnemyY;
-            }   
+            if (distFromCenter > 0 && distFromCenter < (rocks.width + rocks.height) * 0.4f + enemies[i].size) {
+                float pushX = fromCenterX / distFromCenter;
+                float pushY = fromCenterY / distFromCenter;
+
+                enemies[i].position.x += pushX * 45.0f * GetFrameTime();
+                enemies[i].position.y += pushY * 45.0f * GetFrameTime();
+
+                // dodanie siły "ślizgającej", łamiącej idealną równowagę po przeciwnych stronach kamienia
+                float tangentX = -pushY;
+                float tangentY = pushX;
+                
+                float dot = (dx * tangentX) + (dy * tangentY);
+                float slideForce = 65.0f; // siła ześlizgiwania (im większa tym szybciej wymijają)
+                
+                if (dot > 0.0f) {
+                    enemies[i].position.x += tangentX * slideForce * GetFrameTime();
+                    enemies[i].position.y += tangentY * slideForce * GetFrameTime();
+                } else {
+                    enemies[i].position.x -= tangentX * slideForce * GetFrameTime();
+                    enemies[i].position.y -= tangentY * slideForce * GetFrameTime();
+                }
+            }
+
+            // Rozwiazywanie kolizji z zaokraglonymi rogami hitboxow (wypychanie fizyczne)
+            float closestX = fmaxf(rocks.x, fminf(enemies[i].position.x, rocks.x + rocks.width));
+            float closestY = fmaxf(rocks.y, fminf(enemies[i].position.y, rocks.y + rocks.height));
+            float diffX = enemies[i].position.x - closestX;
+            float diffY = enemies[i].position.y - closestY;
+            float distance = sqrt(diffX * diffX + diffY * diffY);
+            
+            if (distance < enemies[i].size) { 
+                if (distance > 0.0f) {
+                    float overlap = enemies[i].size - distance;
+                    enemies[i].position.x += (diffX / distance) * overlap;
+                    enemies[i].position.y += (diffY / distance) * overlap;
+                } else {
+                    enemies[i].position.y -= 1.0f; 
+                }
+            }
         }
         
 

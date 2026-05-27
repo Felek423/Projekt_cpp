@@ -1,46 +1,81 @@
 #include "game.h"
 #include <cmath> 
+#include <vector>
 
 void Game::GenerateMap() {
     dungeonMap.clear();
     currentX = 0; currentY = 0;
-    int cx = 0, cy = 0;
-    dungeonMap[{cx, cy}].generated = true;
 
-    int maxDist = 0;
-    int bossX = 0, bossY = 0;
+    // Pokój startowy
+    dungeonMap[{0, 0}].generated = true;
 
-    for (int i = 0; i < 3; i++) {
-        int dir = GetRandomValue(0, 3);
-        int px = cx, py = cy;
-        if (dir == 0) cy -= 1;
-        else if (dir == 1) cy += 1;
-        else if (dir == 2) cx -= 1;
-        else if (dir == 3) cx += 1;
+    const int numRooms = 5;
+    std::vector<std::pair<int, int>> roomCoords;
+    roomCoords.push_back({0, 0});
 
-        dungeonMap[{px, py}].generated = true;
-        dungeonMap[{cx, cy}].generated = true;
-        if (dir == 0) { dungeonMap[{px, py}].hasTop = true; dungeonMap[{cx, cy}].hasBottom = true; }
-        if (dir == 1) { dungeonMap[{px, py}].hasBottom = true; dungeonMap[{cx, cy}].hasTop = true; }
-        if (dir == 2) { dungeonMap[{px, py}].hasLeft = true; dungeonMap[{cx, cy}].hasRight = true; }
-        if (dir == 3) { dungeonMap[{px, py}].hasRight = true; dungeonMap[{cx, cy}].hasLeft = true; }
+    // Pętla generacji
+    while (dungeonMap.size() < numRooms) {
+        // Wybierz losowy istniejący pokój, od którego zaczniemy tworzyć odgałęzienie
+        int randIndex = GetRandomValue(0, roomCoords.size() - 1);
+        int px = roomCoords[randIndex].first;
+        int py = roomCoords[randIndex].second;
 
-        // Skarbiec
-        if (i == 2) {
-            dungeonMap[{cx, cy}].type = 1;
+        // Spróbuj znaleźć pustego sąsiada
+        int attempts = 0;
+        bool createdRoom = false;
+        while (attempts < 10 && !createdRoom) {
+            attempts++;
+            int dir = GetRandomValue(0, 3);
+            int cx = px, cy = py;
+
+            if (dir == 0) cy -= 1;      // Góra
+            else if (dir == 1) cy += 1; // Dół
+            else if (dir == 2) cx -= 1; // Lewo
+            else if (dir == 3) cx += 1; // Prawo
+
+            // Jeśli pokój nie istnieje, stwórz go
+            if (dungeonMap.find({cx, cy}) == dungeonMap.end()) {
+                dungeonMap[{cx, cy}].generated = true;
+                roomCoords.push_back({cx, cy});
+
+                if (dir == 0) { dungeonMap[{px, py}].hasTop = true; dungeonMap[{cx, cy}].hasBottom = true; }
+                if (dir == 1) { dungeonMap[{px, py}].hasBottom = true; dungeonMap[{cx, cy}].hasTop = true; }
+                if (dir == 2) { dungeonMap[{px, py}].hasLeft = true; dungeonMap[{cx, cy}].hasRight = true; }
+                if (dir == 3) { dungeonMap[{px, py}].hasRight = true; dungeonMap[{cx, cy}].hasLeft = true; }
+                
+                createdRoom = true;
+            }
         }
+    }
 
-        // Szukamy najdalszego pokoju na Bossa
-        int dist = abs(cx) + abs(cy);
-        if (dist >= maxDist && dungeonMap[{cx, cy}].type != 1 && (cx != 0 || cy != 0)) {
+    // Znajdź najdalszy pokój na Bossa
+    int maxDist = -1;
+    int bossX = 0, bossY = 0;
+    for (const auto& coords : roomCoords) {
+        if (coords.first == 0 && coords.second == 0) continue; // Boss nie może być w pokoju startowym
+
+        int dist = abs(coords.first) + abs(coords.second);
+        if (dist > maxDist) {
             maxDist = dist;
-            bossX = cx;
-            bossY = cy;
+            bossX = coords.first;
+            bossY = coords.second;
         }
     }
     
     // zapisanie bossa na mapie
-    dungeonMap[{bossX, bossY}].type = 3;
+    dungeonMap[{bossX, bossY}].type = 3; // Pokój Bossa
+
+    // Umieść pokój ze skarbem
+    if (dungeonMap.size() > 2) {
+        int treasureX, treasureY;
+        do {
+            int randIndex = GetRandomValue(0, roomCoords.size() - 1);
+            treasureX = roomCoords[randIndex].first;
+            treasureY = roomCoords[randIndex].second;
+        } while ((treasureX == 0 && treasureY == 0) || (treasureX == bossX && treasureY == bossY));
+        
+        dungeonMap[{treasureX, treasureY}].type = 1; // Pokój ze skarbem
+    }
 }
 
 void Game::CheckRoomTransitions() {

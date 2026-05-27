@@ -31,6 +31,9 @@ private:
     float uiHeartScale;
     float pickupHeartScale;
 
+    Texture2D itemSprite;
+    float itemScale;
+
     Texture2D rockSprite;
     Vector2 rockScale;
 

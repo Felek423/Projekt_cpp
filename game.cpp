@@ -30,6 +30,11 @@ Game::Game(int sw, int sh) {
     uiHeartScale = 3.5f;     // skala serc w pasku zdrowia gracza
     pickupHeartScale = 4.0f; // bazowa skala serc leżących na mapie
 
+    Image itemImage = LoadImage("przedmiot.png");
+    itemSprite = LoadTextureFromImage(itemImage);
+    UnloadImage(itemImage);
+    itemScale = 0.3f; // skala przedmiotu
+
     Image rockImage = LoadImage("kamien.png");
     rockSprite = LoadTextureFromImage(rockImage);
     UnloadImage(rockImage);
@@ -62,6 +67,12 @@ Game::Game(int sw, int sh) {
     enemySprites[1] = LoadTextureFromImage(imageT1); 
     hasEnemySprite[1] = true; // Zaznaczamy, że typ 1 ma grafikę
     UnloadImage(imageT1);
+
+    //wrog typ 4 (boss)
+    Image imageT4 = LoadImage("boss.png"); 
+    enemySprites[4] = LoadTextureFromImage(imageT4); 
+    hasEnemySprite[4] = true; // Zaznaczamy, że boss ma grafikę
+    UnloadImage(imageT4);
 
     // Ustawienia animacji 4x4
     maxFrames = 4;           
@@ -97,12 +108,14 @@ Game::Game(int sw, int sh) {
         {roomX + 200, roomY + 150, 100 , 100},
         {roomX + 700, roomY + 300, 100 , 100}, 
         {roomX + 1000, roomY + 500, 100 , 100},
-        {roomX + 1000, roomY + 650, 100 , 100}
+        {roomX + 1000, roomY + 600, 100 , 100}
     };
 
     enemies.push_back({{roomX + 700, roomY + 200}, 150.0f, 50.0f, 3, 2.0f, 5, 0, 0});
     enemies.push_back({{roomX + 400, roomY + 400}, 100.0f, 50.0f, 2, 2.0f, 5, 0, 0}); // Przeciwnik typu 2 
     enemies.push_back({{roomX + 1100, roomY + 300}, 120.0f, 50.0f, 1, 2.0f, 5, 0, 0}); // Przeciwnik typu 1 
+    
+    GenerateMap(); // Wywołujemy generację, aby połączyć drzwi do reszty mapy
     dungeonMap[{0, 0}].obstacles = obstacles;
     dungeonMap[{0, 0}].enemies = enemies;
 }
@@ -132,6 +145,7 @@ Game::~Game() {
     UnloadTexture(playerSprite);
     UnloadTexture(floorSprite);
     UnloadTexture(heartSprite);
+    UnloadTexture(itemSprite);
     UnloadTexture(rockSprite);
     UnloadTexture(playerBulletSprite);
     if (enemyBulletSprite.id != 0) UnloadTexture(enemyBulletSprite);

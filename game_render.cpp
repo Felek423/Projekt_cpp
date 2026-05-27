@@ -150,8 +150,16 @@ void Game::DrawEntities() {
         }
         else if (p.type == 2) {
             float hover = sin(GetTime() * 4.0f) * 5.0f;
-            DrawRectangle(p.position.x - 10, p.position.y - 10 + hover, 20, 20, GOLD);
-            DrawRectangleLines(p.position.x - 10, p.position.y - 10 + hover, 20, 20, ORANGE);
+            if (itemSprite.id != 0) {
+                float width = itemSprite.width * itemScale;
+                float height = itemSprite.height * itemScale;
+                Rectangle sourceRec = { 0.0f, 0.0f, (float)itemSprite.width, (float)itemSprite.height };
+                Rectangle destRec = { p.position.x - width/2, p.position.y - height/2 + hover, width, height };
+                DrawTexturePro(itemSprite, sourceRec, destRec, {0, 0}, 0.0f, WHITE);
+            } else {
+                DrawRectangle(p.position.x - 10, p.position.y - 10 + hover, 20, 20, GOLD);
+                DrawRectangleLines(p.position.x - 10, p.position.y - 10 + hover, 20, 20, ORANGE);
+            }
         }
     }
 }
