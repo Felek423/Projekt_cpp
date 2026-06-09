@@ -28,6 +28,8 @@ void Game::DrawRoom() {
 
 void Game::DrawEntities() {
     // rysowanie przeszkod
+    BeginScissorMode(roomX, roomY, roomWidth, roomHeight); // ucinanie do granic pokoju
+
     for(Rectangle rocks : obstacles){
         if (rockSprite.id != 0) {
             Rectangle sourceRec = { 0.0f, 0.0f, (float)rockSprite.width, (float)rockSprite.height };
@@ -47,6 +49,8 @@ void Game::DrawEntities() {
             DrawRectangleRoundedLinesEx(rocks, 0.2f, 10, 5.0f, DARKGRAY); 
         }
     }
+
+    EndScissorMode(); // Wyłączamy ucinanie
 
     // rysowanie gracza z grafiki
     Color playerTint = WHITE;

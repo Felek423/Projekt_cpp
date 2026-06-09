@@ -129,23 +129,41 @@ void Game::CheckRoomTransitions() {
             }
             else {
                 // Zwykly pokoj
-                float size = 100.0f; float margin = 50.0f;
-                obstacles.push_back({roomX + margin, roomY + margin, size, size});
-                obstacles.push_back({roomX + roomWidth - margin - size, roomY + margin, size, size});
-                obstacles.push_back({roomX + margin, roomY + roomHeight - margin - size, size, size});
-                obstacles.push_back({roomX + roomWidth - margin - size, roomY + roomHeight - margin - size, size, size});
-                
-             
-                
-                int enemyCount = GetRandomValue(3, 4);
-                for(int i = 0; i < enemyCount; i++){
-                    float ex = GetRandomValue(roomX + margin + size, roomX + roomWidth - margin - size);
-                    float ey = GetRandomValue(roomY + margin + size, roomY + roomHeight - margin - size);
-                    int type = GetRandomValue(1, 3);
-                    float speed = GetRandomValue(60, 120); 
-                    int hp = GetRandomValue(3, 6); 
+                if (!roomLayouts.empty()) {
+                    int layoutIdx = GetRandomValue(0, roomLayouts.size() - 1); // losowanie struktury
+                    const auto& layout = roomLayouts[layoutIdx];
+                    for (int r = 0; r < 9 && r < layout.size(); ++r) {
+                        for (int c = 0; c < 14 && c < layout[r].size(); ++c) {
+                            float cellX = roomX + c * 100.0f;
+                            float cellY = roomY + r * 100.0f;
+                            if (layout[r][c] == 'X') {
+                                obstacles.push_back({cellX, cellY, 100.0f, 100.0f});
+                            } else if (layout[r][c] == '.') {
+                                int type = GetRandomValue(1, 3);
+                                float speed = GetRandomValue(60, 90);
+                                int hp = GetRandomValue(3, 5);
+                                enemies.push_back({{cellX + 50.0f, cellY + 50.0f}, speed, 50.0f, type, 2.0f, hp, 0, 0, 0, 0.0f, 0});
+                            }
+                        }
+                    }
+                } else {
+                    // Awaryjne generowanie pokoju, jeśli plik z układami nie istnieje 
+                    float size = 100.0f; float margin = 50.0f;
+                    obstacles.push_back({roomX + margin, roomY + margin, size, size});
+                    obstacles.push_back({roomX + roomWidth - margin - size, roomY + margin, size, size});
+                    obstacles.push_back({roomX + margin, roomY + roomHeight - margin - size, size, size});
+                    obstacles.push_back({roomX + roomWidth - margin - size, roomY + roomHeight - margin - size, size, size});
+                    
+                    int enemyCount = GetRandomValue(3, 4);
+                    for(int i = 0; i < enemyCount; i++){
+                        float ex = GetRandomValue(roomX + margin + size, roomX + roomWidth - margin - size);
+                        float ey = GetRandomValue(roomY + margin + size, roomY + roomHeight - margin - size);
+                        int type = GetRandomValue(1, 3);
+                        float speed = GetRandomValue(60, 120); 
+                        int hp = GetRandomValue(3, 6); 
 
-                    enemies.push_back({{ex, ey}, speed, 50.0f, type, 2.0f, hp, 0, 0, 0, 0.0f, 0});
+                        enemies.push_back({{ex, ey}, speed, 50.0f, type, 2.0f, hp, 0, 0, 0, 0.0f, 0});
+                    }
                 }
             
                 nextRoom.obstacles = obstacles;

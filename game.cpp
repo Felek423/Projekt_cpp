@@ -1,5 +1,6 @@
 #include "game.h"
 #include <cmath>
+#include <fstream>
 
 Game::Game(int sw, int sh) {
     screenWidth = sw;
@@ -33,12 +34,12 @@ Game::Game(int sw, int sh) {
     Image itemImage = LoadImage("przedmiot.png");
     itemSprite = LoadTextureFromImage(itemImage);
     UnloadImage(itemImage);
-    itemScale = 0.3f; // skala przedmiotu
+    itemScale = 0.2f; 
 
     Image rockImage = LoadImage("kamien.png");
     rockSprite = LoadTextureFromImage(rockImage);
     UnloadImage(rockImage);
-    rockScale = {4.0f, 2.5f}; // szerokosc / wysokosc skali kamienia
+    rockScale = {4.0f, 2.5f}; // szerokosc / wysokosc 
 
     Image pBulletImage = LoadImage("pocisk.png");
     playerBulletSprite = LoadTextureFromImage(pBulletImage);
@@ -46,7 +47,7 @@ Game::Game(int sw, int sh) {
     Image eBulletImage = LoadImage("pocisk_wrog.png");
     enemyBulletSprite = LoadTextureFromImage(eBulletImage);
     UnloadImage(eBulletImage);
-    bulletScale = 0.4f; // skala wielkości grafiki pocisków
+    bulletScale = 0.36f; 
 
     for(int i = 0; i < 5; i++) {
         hasEnemySprite[i] = false;
@@ -101,6 +102,8 @@ Game::Game(int sw, int sh) {
     leftDoor = {roomX, roomY + roomHeight / 2.0f - 60, 50, 120};
     rightDoor = {roomX + roomWidth - 50, roomY + roomHeight / 2.0f - 60, 50, 120};
 
+    LoadRoomLayouts();
+
     isPaused = false;
     isGameOver = false;
     isVictory = false;
@@ -120,6 +123,37 @@ Game::Game(int sw, int sh) {
     GenerateMap(); // Wywołujemy generację, aby połączyć drzwi do reszty mapy
     dungeonMap[{0, 0}].obstacles = obstacles;
     dungeonMap[{0, 0}].enemies = enemies;
+}
+
+void Game::LoadRoomLayouts() {
+    std::ifstream file("layouts.txt");
+    if (!file.is_open()) return;
+
+    std::string line;
+    std::vector<std::string> currentLayout;
+    while (std::getline(file, line)) {
+        // wymuszenie nowej mapy po -
+        if (!line.empty() && line[0] == '-') {
+            if (!currentLayout.empty()) roomLayouts.push_back(currentLayout);
+            currentLayout.clear();
+            continue;
+        }
+         
+        // ignoruje puste linie tylko wtedy, gdy nie zaczęliśmy jeszcze czytać nowej mapy
+        if (currentLayout.empty() && line.empty()) continue;
+
+        // traktuje każdą inną linię jako część mapy 
+        currentLayout.push_back(line);
+
+        // kiedy miniemy 9 linii, zapisujemy gotową mapę
+        if (currentLayout.size() == 9) {
+            roomLayouts.push_back(currentLayout);
+            currentLayout.clear();
+        }
+    }
+    if (!currentLayout.empty()) {
+        roomLayouts.push_back(currentLayout); 
+    }
 }
 
 void Game::Update() {

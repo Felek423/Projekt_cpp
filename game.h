@@ -2,6 +2,8 @@
 #include "types.h"
 #include <map>
 #include <utility>
+#include <string>
+#include <vector>
 
 class Game {
 public:
@@ -55,6 +57,8 @@ private:
     void UpdatePlayerShooting();
     void UpdateEnemies();
     void UpdateBullets();
+    
+    void LoadRoomLayouts();
 
     // funkcje rysujące
     void DrawRoom();
@@ -94,6 +98,7 @@ private:
     int currentX;
     int currentY;
     int clearedRoomsCount;
+    std::vector<std::vector<std::string>> roomLayouts;
     
     int screenWidth;
     int screenHeight;
