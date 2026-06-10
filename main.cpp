@@ -8,6 +8,11 @@ int main(){
     SetExitKey(0);
     SetTargetFPS(30);
 
+    // Inicjalizacja systemu audio i wczytanie muzyki
+    InitAudioDevice();
+    Music bgMusic = LoadMusicStream("muzyka.mp3");
+    PlayMusicStream(bgMusic); // Rozpoczęcie odtwarzania
+
     screenWidth = GetMonitorWidth(GetCurrentMonitor());
     screenHeight = GetMonitorHeight(GetCurrentMonitor());    
     ToggleFullscreen();
@@ -25,6 +30,9 @@ int main(){
             game.Update();
         }
         
+        // Aktualizacja strumienia audio (niezbędne, aby muzyka grała płynnie)
+        UpdateMusicStream(bgMusic);
+
         // obsługa przycisku wyjscia wewnątrz logiki okna
         if (game.isPaused || game.isGameOver) {
             Vector2 mousePos = GetMousePosition();
@@ -33,6 +41,8 @@ int main(){
             
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 if (CheckCollisionPointRec(mousePos, btnQuit)) {
+                    UnloadMusicStream(bgMusic);
+                    CloseAudioDevice();
                     CloseWindow();
                     return 0;      
                 }
@@ -50,5 +60,10 @@ int main(){
         
         EndDrawing();
     } 
+    
+    // Sprzątanie po zamknięciu gry
+    UnloadMusicStream(bgMusic);
+    CloseAudioDevice();
+
     return 0;
 }

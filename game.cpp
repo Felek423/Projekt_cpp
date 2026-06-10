@@ -102,7 +102,8 @@ Game::Game(int sw, int sh) {
     leftDoor = {roomX, roomY + roomHeight / 2.0f - 60, 50, 120};
     rightDoor = {roomX + roomWidth - 50, roomY + roomHeight / 2.0f - 60, 50, 120};
 
-    LoadRoomLayouts();
+    // Tymczasowo wyłączone ładowanie z pliku, aby uruchomić proceduralne generowanie
+    // LoadRoomLayouts();
 
     isPaused = false;
     isGameOver = false;
